@@ -22,7 +22,7 @@ export function MarketStatus({
         ? "Refreshing market data…"
         : source === "live"
           ? "Live quotes connected"
-          : "Demo quotes (add FINNHUB_API_KEY for live data)"}
+          : "Demo market data"}
     </div>
   );
 }
