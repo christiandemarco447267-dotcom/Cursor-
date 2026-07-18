@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="AInvestPro">
+  <defs>
+    <linearGradient id="g" x1="18" y1="110" x2="110" y2="18" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0c1b2a"/>
+      <stop offset="0.55" stop-color="#143248"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#g)"/>
+  <path d="M34 86h12v-22H34v22zm24 0h12V52H58v34zm24 0h12V40H82v46z" fill="#e8fffa"/>
+  <path d="M36 48l28-18 18 12 22-20" fill="none" stroke="#5eead4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M92 22h14v14" fill="none" stroke="#5eead4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
