@@ -175,14 +175,24 @@ export function buildFinancialProfile(
     .filter((a) => (a.apr ?? 0) >= 15 && a.currentBalance > 0)
     .map((a) => ({ name: a.name, balance: a.currentBalance, apr: a.apr ?? 0 }));
 
+  const debtService =
+    posted
+      .filter(
+        (t) =>
+          t.amount > 0 &&
+          t.category.some((c) => c === "Credit Card" || c === "Loan"),
+      )
+      .reduce((sum, t) => sum + t.amount, 0) / months;
+
   const monthly: MonthlyCashFlow = {
     income,
     expenses,
-    net: income - expenses - savingsTransfers,
+    net: income - expenses - savingsTransfers - debtService,
     savingsTransfers,
   };
 
-  const savingsRate = income > 0 ? (savingsTransfers + Math.max(0, monthly.net)) / income : 0;
+  // Observed savings rate from money actually moved into savings accounts.
+  const savingsRate = income > 0 ? savingsTransfers / income : 0;
   const emergencyFundMonths =
     essentialMonthlySpend > 0 ? liquidAssets / essentialMonthlySpend : 0;
 
