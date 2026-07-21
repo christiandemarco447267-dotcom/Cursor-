@@ -98,7 +98,10 @@ export function HomeDashboard() {
   return (
     <div className="space-y-4">
       <section className="animate-rise">
-        <h1 className="font-[family-name:var(--font-newsreader)] text-3xl text-ink">
+        <h1
+          suppressHydrationWarning
+          className="font-[family-name:var(--font-newsreader)] text-3xl text-ink"
+        >
           {greetingFor()}
         </h1>
         <div className="mt-3 flex flex-wrap gap-2">
