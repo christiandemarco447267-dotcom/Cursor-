@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #0c1b2a;
+  --ink-soft: #1a3348;
+  --muted: #5b6b7c;
+  --line: #d5dee8;
+  --paper: #eef2f6;
+  --surface: #ffffff;
+  --teal: #0f766e;
+  --teal-deep: #115e59;
+  --gain: #0b7a4b;
+  --loss: #b42318;
+  --amber: #b45309;
+  --glow: rgba(15, 118, 110, 0.14);
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-teal: var(--teal);
+  --color-teal-deep: var(--teal-deep);
+  --color-gain: var(--gain);
+  --color-loss: var(--loss);
+  --color-amber: var(--amber);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-newsreader);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--foreground);
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(15, 118, 110, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(12, 27, 42, 0.08), transparent 50%),
+    linear-gradient(180deg, #f7fafb 0%, var(--paper) 45%, #e8eef4 100%);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(15, 118, 110, 0.22);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-line {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fill-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.55s ease both;
+}
+
+.animate-rise-delay-1 {
+  animation: rise 0.55s ease both;
+  animation-delay: 0.08s;
+}
+
+.animate-rise-delay-2 {
+  animation: rise 0.55s ease both;
+  animation-delay: 0.16s;
+}
+
+.animate-pulse-line {
+  animation: pulse-line 1.8s ease-in-out infinite;
+}
+
+.animate-fill-bar {
+  transform-origin: left center;
+  animation: fill-bar 0.8s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-rise,
+  .animate-rise-delay-1,
+  .animate-rise-delay-2,
+  .animate-pulse-line,
+  .animate-fill-bar {
+    animation: none !important;
+  }
+}
