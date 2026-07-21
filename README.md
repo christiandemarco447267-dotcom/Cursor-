@@ -57,3 +57,27 @@ Portfolio state is stored in the browser (`localStorage`). Quotes are fetched th
 ## Disclaimer
 
 AInvestPro is an education and journaling tool, not investment advice or a brokerage.
+
+## View in Vibecode
+
+This rebuild can be published to Vibecode so it is openable in the Vibecode app / at a `*.vibecode.run` URL.
+
+1. Create an API key at [vibecode.dev/key](https://vibecode.dev/key)
+2. Install the CLI and export the key:
+
+```bash
+mkdir -p ~/.local/bin
+curl -fsSL https://github.com/vibecode/vibecode-cli/releases/download/v0.1.0/vibecode-cli-linux-amd64 \
+  -o ~/.local/bin/vibecode-cli && chmod +x ~/.local/bin/vibecode-cli
+export PATH="$HOME/.local/bin:$PATH"
+export VIBECODE_API_KEY="your-key"
+```
+
+3. Deploy:
+
+```bash
+./scripts/deploy-vibecode.sh ainvestpro
+```
+
+The script creates a Vibecode **webapp** project, runs the platform agent + deploy (`yolo`), and tries to claim `ainvestpro.vibecode.run`.
+
