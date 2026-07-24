@@ -9,7 +9,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { DEMO_UNIVERSE } from "./market";
+import { DEMO_UNIVERSE, demoSnapshot } from "./market";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
 import { loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
@@ -132,25 +132,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const symbolsKey = requestSymbols(state).sort().join(",");
 
-  const refreshMarket = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/market?symbols=${encodeURIComponent(symbolsKey)}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`Market request failed (${res.status})`);
-      const snapshot = (await res.json()) as MarketSnapshot;
-      setMarket({ status: snapshot.status, quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
-    } catch (error) {
-      setMarket((prev) => ({
-        status: "error",
-        quotes: prev.quotes,
-        error: error instanceof Error ? error.message : "Unable to load market data.",
-      }));
-    }
+  // setState lives inside the promise callbacks (not synchronously in an effect),
+  // which is the pattern React recommends for syncing with an external system.
+  const refreshMarket = useCallback(() => {
+    fetch(`/api/market?symbols=${encodeURIComponent(symbolsKey)}`, { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Market request failed (${res.status})`);
+        return (await res.json()) as MarketSnapshot;
+      })
+      .then((snapshot) => {
+        setMarket({ status: snapshot.status, quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
+      })
+      .catch(() => {
+        // No backend available (e.g. static hosting) — fall back to client-side demo
+        // quotes so the app stays fully functional instead of showing an error state.
+        const snapshot = demoSnapshot(symbolsKey ? symbolsKey.split(",") : []);
+        setMarket({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
+      });
   }, [symbolsKey]);
 
   useEffect(() => {
     if (!state) return;
-    void refreshMarket();
-    const id = setInterval(() => void refreshMarket(), 60_000);
+    refreshMarket();
+    const id = setInterval(refreshMarket, 60_000);
     return () => clearInterval(id);
   }, [state, refreshMarket]);
 

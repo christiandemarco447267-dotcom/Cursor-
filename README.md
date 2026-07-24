@@ -30,7 +30,22 @@ simulation instead of a static holdings list:
 - **Broader tests** — Unit tests cover trading math, migrations, gamification, quiz
   scoring, insights, and allocation.
 
-## Quick start
+## Try it from GitHub (no local setup)
+
+**Option A — Live demo on GitHub Pages.** Once the *Deploy to GitHub Pages* workflow has
+run (and Pages is set to “GitHub Actions” in repo settings), the app is available at:
+
+> **https://christiandemarco447267-dotcom.github.io/Cursor-/**
+
+This is a fully static, browser-only build (local-first data + client-side demo market
+prices), so everything except live quotes works exactly like the dev server.
+
+**Option B — One click in GitHub Codespaces (full app, incl. the market API).**
+On the repo page: **Code → Codespaces → Create codespace on this branch**. The container
+runs `npm install` and `npm run dev` automatically and forwards port 3000 — open the
+forwarded URL when it appears.
+
+## Quick start (local)
 
 ```bash
 npm install
