@@ -35,6 +35,15 @@ body {
   margin: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Guard against accidental horizontal scrolling on small screens. */
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--text);
@@ -98,6 +107,7 @@ button {
 }
 .grow {
   flex: 1;
+  min-width: 0;
 }
 
 .grid {
@@ -579,6 +589,25 @@ button {
   }
   .main {
     padding: 20px 16px 96px;
+  }
+  .container {
+    padding: 0 16px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .panel-pad-lg {
+    padding: 18px;
+  }
+  .landing-hero {
+    padding: 56px 0 40px;
+  }
+  /* Sparklines are decorative; drop them in dense list rows to save width. */
+  .list-row .sparkline {
+    display: none;
+  }
+  .value-xl {
+    word-break: break-word;
   }
   .grid-2,
   .grid-3,
