@@ -130,6 +130,7 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .panel-strong {
@@ -468,6 +469,7 @@ button {
   background-image: url("/hero-grid.svg");
   background-size: 48px 48px;
   opacity: 0.25;
+  -webkit-mask-image: radial-gradient(900px 600px at 70% 0%, black, transparent 70%);
   mask-image: radial-gradient(900px 600px at 70% 0%, black, transparent 70%);
   pointer-events: none;
 }
@@ -627,6 +629,7 @@ button {
     padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
     background: rgba(11, 18, 32, 0.92);
     border-top: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
   .bottom-nav::-webkit-scrollbar {
