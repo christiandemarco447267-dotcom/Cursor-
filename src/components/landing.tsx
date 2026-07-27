@@ -26,7 +26,8 @@ export function Landing() {
       <div className="container" style={{ position: "relative" }}>
         <header className="row between" style={{ padding: "24px 0" }}>
           <div className="brand">
-            <span className="brand-mark">A</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon.png" alt="AInvestPro logo" className="brand-mark" width={36} height={36} />
             AInvestPro
           </div>
           <Link href="/app" className="btn btn-sm">
@@ -39,7 +40,8 @@ export function Landing() {
             <Sparkles size={15} /> Invest with process, not impulse
           </span>
           <h1 className="display-xl">
-            A calmer way to practice investing — with a real process behind every trade.
+            A calmer way to practice investing — with <span className="text-gradient">a real process</span> behind
+            every trade.
           </h1>
           <p className="muted" style={{ fontSize: 18, maxWidth: 620 }}>
             AInvestPro is an educational paper-trading coach. Simulate buys and sells, write a thesis for every position,

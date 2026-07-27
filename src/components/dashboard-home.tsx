@@ -79,7 +79,7 @@ export function DashboardHome() {
         </button>
       </div>
 
-      <Panel strong className="panel-pad-lg stack gap-md">
+      <Panel strong className="panel-pad-lg hero-balance stack gap-md">
         <span className="eyebrow">Total portfolio value</span>
         <div className="row between wrap gap-md">
           <span className="value-xl">{formatCurrency(summary.total)}</span>
