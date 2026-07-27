@@ -79,7 +79,7 @@ export function DashboardHome() {
         </button>
       </div>
 
-      <Panel strong className="panel-pad-lg hero-balance stack gap-md">
+      <Panel strong className="panel-pad-lg hero-balance holo stack gap-md">
         <span className="eyebrow">Total portfolio value</span>
         <div className="row between wrap gap-md">
           <span className="value-xl">{formatCurrency(summary.total)}</span>
@@ -142,7 +142,7 @@ export function DashboardHome() {
 
 function QuickLink({ href, icon, title, body }: { href: string; icon: React.ReactNode; title: string; body: string }) {
   return (
-    <Link href={href} className="panel stack gap-sm" style={{ transition: "border-color .15s ease" }}>
+    <Link href={href} className="panel holo stack gap-sm">
       <span className="trust-icon">{icon}</span>
       <strong>{title}</strong>
       <span className="small muted">{body}</span>

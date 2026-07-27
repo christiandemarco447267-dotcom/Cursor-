@@ -145,6 +145,94 @@ button {
 .panel-pad-lg {
   padding: 28px;
 }
+
+/* ---------- Holographic widgets ---------- */
+.holo {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent;
+  background:
+    linear-gradient(180deg, rgba(130, 165, 235, 0.08), rgba(59, 130, 246, 0.03)),
+    rgba(10, 18, 40, 0.5);
+  box-shadow:
+    0 24px 48px -30px rgba(2, 8, 25, 0.9),
+    0 0 0 1px rgba(120, 150, 220, 0.06) inset;
+  overflow: hidden;
+}
+/* Iridescent animated border via masked gradient ring. */
+.holo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #7cb0ff, #a3e635, #22d3ee, #c084fc, #7cb0ff);
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.75;
+  animation: holo-shift 9s linear infinite;
+  pointer-events: none;
+}
+/* Diagonal light sheen that drifts across the surface (behind content). */
+.holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(124, 176, 255, 0.1) 46%,
+    rgba(163, 230, 53, 0.08) 54%,
+    transparent 66%
+  );
+  background-size: 250% 250%;
+  mix-blend-mode: screen;
+  animation: holo-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+/* Keep real content crisp and above the effects. */
+.holo > * {
+  position: relative;
+  z-index: 1;
+}
+.holo:hover {
+  box-shadow:
+    0 30px 60px -30px rgba(59, 130, 246, 0.5),
+    0 0 0 1px rgba(120, 150, 220, 0.1) inset;
+}
+@keyframes holo-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+@keyframes holo-sheen {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -30% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .holo::before,
+  .holo::after {
+    animation: none;
+  }
+}
+
 .hero-balance {
   background:
     radial-gradient(620px 220px at 100% 0%, rgba(59, 130, 246, 0.2), transparent 70%),
