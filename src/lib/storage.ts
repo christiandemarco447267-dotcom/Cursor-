@@ -99,6 +99,7 @@ export function createInitialState(): AppState {
 
   const base: AppState = {
     version: SCHEMA_VERSION,
+    profileName: "",
     cash: runningCash,
     holdings,
     goals: [],
@@ -350,6 +351,12 @@ export function completeLesson(state: AppState, lessonId: string): AppState {
   if (state.lessons.some((l) => l.lessonId === lessonId)) return state;
   const lessons = [...state.lessons, { lessonId, completedAt: nowIso() }];
   return commit({ ...state, lessons }, { xp: XP_REWARDS.completeLesson });
+}
+
+// ---- Profile -------------------------------------------------------------
+
+export function setProfileName(state: AppState, name: string): AppState {
+  return commit({ ...state, profileName: name.trim().slice(0, 40) });
 }
 
 // ---- Investor profile ----------------------------------------------------

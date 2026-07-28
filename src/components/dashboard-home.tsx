@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -45,20 +46,32 @@ function marketLabel(status: string): string {
 }
 
 export function DashboardHome() {
-  const { ready, state, summary, market, refreshMarket } = useApp();
+  const { ready, state, summary, market, refreshMarket, actions } = useApp();
+  const [nameInput, setNameInput] = useState("");
   if (!ready || !state || !summary) return <Loading />;
 
   const { gamification } = state;
   const progress = xpProgress(gamification.xp);
   const lessonPercent = lessonProgressPercent(state.lessons.map((l) => l.lessonId));
   const realized = realizedPnl(state);
+  const firstName = state.profileName.split(" ")[0];
+
+  const saveName = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (nameInput.trim()) actions.setProfileName(nameInput);
+  };
 
   return (
     <div className="stack gap-lg animate-in">
       <div className="row between wrap gap-md">
         <div className="stack gap-sm">
-          <span className="eyebrow">{greeting()}</span>
-          <h1 style={{ fontSize: "2rem" }}>Your investing workspace</h1>
+          <span className="eyebrow">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ""}
+          </span>
+          <h1 style={{ fontSize: "2rem" }}>
+            {firstName ? `Welcome back, ${firstName}` : "Your investing workspace"}
+          </h1>
         </div>
         <div className="row wrap gap-sm">
           <span className="pill pill-primary">
@@ -71,6 +84,29 @@ export function DashboardHome() {
           <span className="pill">Health {gamification.health}</span>
         </div>
       </div>
+
+      {!firstName ? (
+        <Panel className="row between wrap gap-md">
+          <div className="stack" style={{ gap: 2 }}>
+            <strong>Make it yours</strong>
+            <span className="small muted">Add your name so AInvestPro can greet you.</span>
+          </div>
+          <form className="row gap-sm" onSubmit={saveName}>
+            <input
+              className="input"
+              style={{ maxWidth: 200 }}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="Your name"
+              maxLength={40}
+              aria-label="Your name"
+            />
+            <button className="btn btn-primary btn-sm" type="submit" disabled={!nameInput.trim()}>
+              Save
+            </button>
+          </form>
+        </Panel>
+      ) : null}
 
       <div className="row between wrap gap-sm">
         <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{marketLabel(market.status)}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, RotateCcw, ShieldCheck, Upload } from "lucide-react";
+import { Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { localDayKey } from "@/lib/market";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
@@ -12,8 +12,15 @@ export function SettingsView() {
   const { ready, state, actions } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [name, setName] = useState(state?.profileName ?? "");
 
   if (!ready || !state) return <Loading />;
+
+  const saveName = (event: React.FormEvent) => {
+    event.preventDefault();
+    actions.setProfileName(name);
+    setMessage({ tone: "ok", text: name.trim() ? "Name saved." : "Name cleared." });
+  };
 
   const exportData = () => {
     const json = actions.exportJson();
@@ -54,7 +61,30 @@ export function SettingsView() {
 
   return (
     <div className="stack gap-lg animate-in">
-      <PageHeader title="Data & security" subtitle="Your data lives in this browser. Back it up, restore it, or start fresh." />
+      <PageHeader title="Settings" subtitle="Personalize your workspace and manage your data." />
+
+      <Panel className="stack gap-md">
+        <span className="row gap-sm">
+          <UserRound size={18} /> <strong>Profile</strong>
+        </span>
+        <form className="row wrap gap-sm" onSubmit={saveName}>
+          <div className="field grow">
+            <label htmlFor="profile-name">Your name</label>
+            <input
+              id="profile-name"
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Alex"
+              maxLength={40}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ alignSelf: "flex-end" }}>
+            Save name
+          </button>
+        </form>
+        <span className="small muted">Used to greet you on the dashboard. Stored only in your browser.</span>
+      </Panel>
 
       <Panel className="stack gap-sm">
         <span className="row gap-sm">

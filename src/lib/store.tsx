@@ -108,6 +108,7 @@ export type AppApi = {
     addCheckIn: (input: { mood: AppState["checkIns"][number]["mood"]; note?: string }) => void;
     completeLesson: (lessonId: string) => void;
     setInvestorType: (type: Exclude<AppState["investor"]["type"], "unspecified">) => void;
+    setProfileName: (name: string) => void;
     reset: () => void;
     importJson: (raw: string) => void;
     exportJson: () => string;
@@ -177,6 +178,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addCheckIn: (input) => mutate((s) => mutations.addCheckIn(s, input)),
       completeLesson: (lessonId) => mutate((s) => mutations.completeLesson(s, lessonId)),
       setInvestorType: (type) => mutate((s) => mutations.setInvestorType(s, type)),
+      setProfileName: (name) => mutate((s) => mutations.setProfileName(s, name)),
       reset: () => setCurrent(mutations.createInitialState()),
       importJson: (raw) => setCurrent(mutations.importStateJson(raw)),
       exportJson: () => (current ? mutations.exportStateJson(current) : "{}"),
