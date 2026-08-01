@@ -6,7 +6,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#070e22",
+  themeColor: "#ecf8f3",
 };
 
 const dmSans = DM_Sans({
@@ -22,10 +22,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Sentia AI — Invest with process",
+  title: "Sentia — Invest with process",
   description:
     "A stable, professional paper-trading coach: real buy/sell simulation, goals, investment theses, lessons, and mood check-ins — with local-first, validated data.",
-  applicationName: "Sentia AI",
+  applicationName: "Sentia",
   icons: { icon: "/icon.png", apple: "/icon.png" },
 };
 
