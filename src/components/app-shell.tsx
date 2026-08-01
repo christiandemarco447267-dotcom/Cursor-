@@ -50,8 +50,8 @@ function Sidebar() {
     <aside className="sidebar">
       <Link href="/" className="brand">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
-        Sentia
+        <img src="/icon.png" alt="Sentia AI logo" className="brand-mark" width={36} height={36} />
+        Sentia AI
       </Link>
       {SECTIONS.map((section) => (
         <div key={section}>

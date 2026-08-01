@@ -1,6 +1,6 @@
-# Sentia
+# Sentia AI
 
-**Sentia** is a stable, professional paper-trading coach — an educational, local-first
+**Sentia AI** is a stable, professional paper-trading coach — an educational, local-first
 app for practicing a disciplined investing *process*. Not a brokerage and not investment
 advice.
 

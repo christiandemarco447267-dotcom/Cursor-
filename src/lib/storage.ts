@@ -435,6 +435,6 @@ export function loadStateFromString(raw: string | null): AppState {
 export function importStateJson(raw: string): AppState {
   const parsed: unknown = JSON.parse(raw);
   const migrated = migrateUnknown(parsed);
-  if (!migrated) throw new Error("This file is not a valid Sentia backup.");
+  if (!migrated) throw new Error("This file is not a valid Sentia AI backup.");
   return migrated;
 }
