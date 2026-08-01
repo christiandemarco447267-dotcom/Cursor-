@@ -22,10 +22,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "AInvestPro — Invest with process",
+  title: "Trellis — Invest with process",
   description:
     "A stable, professional paper-trading coach: real buy/sell simulation, goals, investment theses, lessons, and mood check-ins — with local-first, validated data.",
-  applicationName: "AInvestPro",
+  applicationName: "Trellis",
   icons: { icon: "/icon.png", apple: "/icon.png" },
 };
 

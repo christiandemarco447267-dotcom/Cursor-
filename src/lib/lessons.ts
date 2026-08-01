@@ -15,7 +15,7 @@ export const LESSONS: Lesson[] = [
     body: [
       "Markets are noisy in the short run. Nobody reliably predicts the next move, so anchoring decisions to forecasts invites whipsaw.",
       "A written process — what you buy, why, and what would prove you wrong — turns investing into a series of deliberate, reviewable decisions.",
-      "AInvestPro nudges this habit: pair every position with a thesis and revisit it when your mood or the market shifts.",
+      "Trellis nudges this habit: pair every position with a thesis and revisit it when your mood or the market shifts.",
     ],
   },
   {
@@ -37,7 +37,7 @@ export const LESSONS: Lesson[] = [
     body: [
       "Your average cost is the share-weighted price you paid. Buying more at a different price moves that average.",
       "Unrealized P/L is paper gain on positions you still hold; realized P/L is locked in when you sell.",
-      "AInvestPro tracks both: the ledger records realized gains on every sale so you can see the effect of your decisions.",
+      "Trellis tracks both: the ledger records realized gains on every sale so you can see the effect of your decisions.",
     ],
   },
   {
