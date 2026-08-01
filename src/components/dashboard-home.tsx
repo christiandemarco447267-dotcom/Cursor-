@@ -93,6 +93,8 @@ export function DashboardHome() {
           </div>
           <form className="row gap-sm" onSubmit={saveName}>
             <input
+              id="dashboard-name"
+              name="name"
               className="input"
               style={{ maxWidth: 200 }}
               value={nameInput}
