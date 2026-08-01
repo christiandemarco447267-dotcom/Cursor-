@@ -15,11 +15,14 @@ import {
   PieChart,
   Settings,
   Target,
+  UserRound,
   Wallet,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import { AppProvider } from "@/lib/store";
+import { AppProvider, useApp } from "@/lib/store";
+import { experienceLabel, initialsOf } from "@/lib/profile";
 import { OnboardingTour } from "./onboarding-tour";
+import { ProfileSetup } from "./profile-setup";
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ size?: number }>; section: string };
 
@@ -45,6 +48,25 @@ function useIsActive() {
   return (href: string) => (href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(`${href}/`));
 }
 
+function ProfileChip() {
+  const { state } = useApp();
+  const name = state?.profileName ?? "";
+  const initials = initialsOf(name);
+  const color = state?.profile.avatarColor || "#0d9488";
+  const subtitle = experienceLabel(state?.profile.experience ?? null) || "Tap to personalize";
+  return (
+    <Link href="/app/settings" className="profile-chip" style={{ marginTop: "auto" }}>
+      <span className="avatar" style={{ background: color }}>
+        {initials || <UserRound size={18} />}
+      </span>
+      <span className="stack" style={{ gap: 0, minWidth: 0 }}>
+        <strong className="truncate">{name || "Set up profile"}</strong>
+        <span className="small muted truncate">{subtitle}</span>
+      </span>
+    </Link>
+  );
+}
+
 function Sidebar() {
   const isActive = useIsActive();
   return (
@@ -65,6 +87,7 @@ function Sidebar() {
           ))}
         </div>
       ))}
+      <ProfileChip />
     </aside>
   );
 }
@@ -91,6 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="main">{children}</main>
         <BottomNav />
       </div>
+      <ProfileSetup />
       <OnboardingTour />
     </AppProvider>
   );

@@ -90,10 +90,22 @@ export const InvestorProfileSchema = z.object({
 });
 export type InvestorType = z.infer<typeof InvestorProfileSchema>["type"];
 
+export const EXPERIENCE_LEVELS = ["new", "some", "experienced"] as const;
+export const FOCUS_AREAS = ["learn", "discipline", "growth", "explore"] as const;
+
+export const ProfileSchema = z.object({
+  experience: z.enum(EXPERIENCE_LEVELS).nullable().default(null),
+  focus: z.enum(FOCUS_AREAS).nullable().default(null),
+  avatarColor: z.string().trim().max(9).default("#0d9488"),
+});
+export type Profile = z.infer<typeof ProfileSchema>;
+
 export const AppStateSchema = z.object({
   version: z.literal(SCHEMA_VERSION),
   profileName: z.string().trim().max(40).default(""),
   onboardedAt: isoDate.nullable().default(null),
+  profileSetupAt: isoDate.nullable().default(null),
+  profile: ProfileSchema.default({ experience: null, focus: null, avatarColor: "#0d9488" }),
   cash: z.number().nonnegative().max(LIMITS.maxMoney),
   holdings: z.array(HoldingSchema).max(LIMITS.maxHoldings),
   goals: z.array(GoalSchema).max(LIMITS.maxGoals),

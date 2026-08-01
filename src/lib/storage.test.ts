@@ -8,6 +8,7 @@ import {
   deposit,
   importStateJson,
   migrateUnknown,
+  saveProfile,
   sell,
   withdraw,
 } from "./storage";
@@ -82,6 +83,22 @@ test("migrateUnknown upgrades a v1 state and rejects garbage", () => {
   assert.ok(Array.isArray(migrated?.transactions));
 
   assert.equal(migrateUnknown({ nonsense: true }), null);
+});
+
+test("saveProfile stores fields and marks setup complete once", () => {
+  const start = createInitialState();
+  assert.equal(start.profileSetupAt, null);
+  const s1 = saveProfile(start, { name: "Alex Doe", experience: "some", focus: "growth", avatarColor: "#2563eb" });
+  assert.equal(s1.profileName, "Alex Doe");
+  assert.equal(s1.profile.experience, "some");
+  assert.equal(s1.profile.focus, "growth");
+  assert.equal(s1.profile.avatarColor, "#2563eb");
+  assert.ok(s1.profileSetupAt);
+  // Later edits keep the original setup timestamp.
+  const s2 = saveProfile(s1, { name: "Alex" });
+  assert.equal(s2.profileSetupAt, s1.profileSetupAt);
+  assert.equal(s2.profileName, "Alex");
+  assert.equal(s2.profile.experience, "some");
 });
 
 test("importStateJson throws on invalid backups", () => {

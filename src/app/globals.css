@@ -659,6 +659,74 @@ button {
   background: var(--primary-soft);
   color: var(--primary-strong);
 }
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px -6px rgba(15, 46, 42, 0.5);
+}
+.avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--border) inset;
+}
+.swatch.selected {
+  border-color: var(--bg-soft);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.choice:hover {
+  border-color: var(--primary);
+}
+.choice.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  margin-bottom: 4px;
+  transition: border-color 0.15s ease;
+}
+.profile-chip:hover {
+  border-color: var(--primary);
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tour-dots {
   display: flex;
   align-items: center;
