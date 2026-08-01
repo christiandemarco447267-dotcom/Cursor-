@@ -627,6 +627,63 @@ button {
   flex-shrink: 0;
 }
 
+/* ---------- Modal / onboarding tour ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 30, 27, 0.42);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fade-in 0.2s ease both;
+}
+.modal {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 40px 80px -32px rgba(8, 30, 27, 0.5);
+  padding: 26px;
+  animation: fade-up 0.3s ease both;
+}
+.tour-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+.tour-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.tour-dot.active {
+  width: 20px;
+  background: var(--primary);
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ---------- Loading ---------- */
 .loading-block {
   display: grid;

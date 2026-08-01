@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { AppProvider } from "@/lib/store";
+import { OnboardingTour } from "./onboarding-tour";
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ size?: number }>; section: string };
 
@@ -90,6 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="main">{children}</main>
         <BottomNav />
       </div>
+      <OnboardingTour />
     </AppProvider>
   );
 }

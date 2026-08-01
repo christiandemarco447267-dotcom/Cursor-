@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { localDayKey } from "@/lib/market";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
@@ -9,7 +9,7 @@ import { Loading, Panel, PageHeader } from "./ui";
 const MAX_IMPORT_BYTES = 1_000_000;
 
 export function SettingsView() {
-  const { ready, state, actions } = useApp();
+  const { ready, state, actions, openTour } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [name, setName] = useState(state?.profileName ?? "");
@@ -84,6 +84,18 @@ export function SettingsView() {
           </button>
         </form>
         <span className="small muted">Used to greet you on the dashboard. Stored only in your browser.</span>
+      </Panel>
+
+      <Panel className="row between wrap gap-sm">
+        <div className="stack" style={{ gap: 2 }}>
+          <span className="row gap-sm">
+            <Compass size={18} /> <strong>Getting started</strong>
+          </span>
+          <span className="small muted">New here? Replay the guided walkthrough of Sentia.</span>
+        </div>
+        <button className="btn" onClick={openTour}>
+          Replay tutorial
+        </button>
       </Panel>
 
       <Panel className="stack gap-sm">

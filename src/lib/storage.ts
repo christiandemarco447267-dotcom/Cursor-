@@ -102,6 +102,7 @@ export function createInitialState(): AppState {
   const base: AppState = {
     version: SCHEMA_VERSION,
     profileName: "",
+    onboardedAt: null,
     cash: runningCash,
     holdings,
     goals: [],
@@ -359,6 +360,11 @@ export function completeLesson(state: AppState, lessonId: string): AppState {
 
 export function setProfileName(state: AppState, name: string): AppState {
   return commit({ ...state, profileName: name.trim().slice(0, 40) });
+}
+
+export function completeOnboarding(state: AppState): AppState {
+  if (state.onboardedAt) return state;
+  return commit({ ...state, onboardedAt: nowIso() });
 }
 
 // ---- Investor profile ----------------------------------------------------
