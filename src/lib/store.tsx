@@ -102,6 +102,9 @@ export type AppApi = {
   summary: PortfolioSummary | null;
   market: MarketState;
   quotes: Quote[];
+  tourOpen: boolean;
+  openTour: () => void;
+  closeTour: () => void;
   refreshMarket: () => void;
   actions: {
     buy: (input: { symbol: string; shares: number; price: number }) => void;
@@ -120,6 +123,7 @@ export type AppApi = {
     completeLesson: (lessonId: string) => void;
     setInvestorType: (type: Exclude<AppState["investor"]["type"], "unspecified">) => void;
     setProfileName: (name: string) => void;
+    completeOnboarding: () => void;
     reset: () => void;
     importJson: (raw: string) => void;
     exportJson: () => string;
@@ -137,10 +141,15 @@ function requestSymbols(state: AppState | null): string[] {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [market, setMarket] = useState<MarketState>({ status: "loading", quotes: [] });
+  const [manualTourOpen, setManualTourOpen] = useState(false);
 
   useEffect(() => {
     ensureInit();
   }, []);
+
+  // The tour auto-shows for brand-new users (onboardedAt null) and can be
+  // reopened manually. Finishing sets onboardedAt, which hides the auto case.
+  const tourOpen = manualTourOpen || (Boolean(state) && !state?.onboardedAt);
 
   const symbolsKey = requestSymbols(state).sort().join(",");
 
@@ -190,6 +199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeLesson: (lessonId) => mutate((s) => mutations.completeLesson(s, lessonId)),
       setInvestorType: (type) => mutate((s) => mutations.setInvestorType(s, type)),
       setProfileName: (name) => mutate((s) => mutations.setProfileName(s, name)),
+      completeOnboarding: () => mutate((s) => mutations.completeOnboarding(s)),
       reset: () => setCurrent(mutations.createInitialState()),
       importJson: (raw) => setCurrent(mutations.importStateJson(raw)),
       exportJson: () => (current ? mutations.exportStateJson(current) : "{}"),
@@ -203,6 +213,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     summary,
     market,
     quotes: market.quotes,
+    tourOpen,
+    openTour: () => setManualTourOpen(true),
+    closeTour: () => setManualTourOpen(false),
     refreshMarket: () => void refreshMarket(),
     actions,
   };
