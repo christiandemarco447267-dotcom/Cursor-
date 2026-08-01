@@ -22,10 +22,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Sentia — Invest with process",
+  title: "Sentia AI — Invest with process",
   description:
     "A stable, professional paper-trading coach: real buy/sell simulation, goals, investment theses, lessons, and mood check-ins — with local-first, validated data.",
-  applicationName: "Sentia",
+  applicationName: "Sentia AI",
   icons: { icon: "/icon.png", apple: "/icon.png" },
 };
 

@@ -27,8 +27,8 @@ export function Landing() {
         <header className="row between" style={{ padding: "24px 0" }}>
           <div className="brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
-            Sentia
+            <img src="/icon.png" alt="Sentia AI logo" className="brand-mark" width={36} height={36} />
+            Sentia AI
           </div>
           <Link href="/app" className="btn btn-sm">
             Open app <ArrowRight size={16} />
@@ -44,7 +44,7 @@ export function Landing() {
             every trade.
           </h1>
           <p className="muted" style={{ fontSize: 18, maxWidth: 620 }}>
-            Sentia is an educational paper-trading coach. Simulate buys and sells, write a thesis for every position,
+            Sentia AI is an educational paper-trading coach. Simulate buys and sells, write a thesis for every position,
             set goals, log your mood, and build durable habits — all with local-first, validated data.
           </p>
           <div className="row wrap gap-md">
@@ -70,7 +70,7 @@ export function Landing() {
         </section>
 
         <footer className="disclaimer" style={{ padding: "0 0 48px" }}>
-          Sentia is educational paper-trading software. It is not investment advice, not a brokerage, and holds no
+          Sentia AI is educational paper-trading software. It is not investment advice, not a brokerage, and holds no
           real money. Prices are simulated unless a market data key is configured.
         </footer>
       </div>
