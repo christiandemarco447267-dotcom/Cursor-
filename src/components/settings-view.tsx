@@ -3,13 +3,14 @@
 import { useRef, useState } from "react";
 import { Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { localDayKey } from "@/lib/market";
+import { experienceLabel, focusLabel, initialsOf } from "@/lib/profile";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
 
 const MAX_IMPORT_BYTES = 1_000_000;
 
 export function SettingsView() {
-  const { ready, state, actions, openTour } = useApp();
+  const { ready, state, actions, openTour, openProfileSetup } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [name, setName] = useState(state?.profileName ?? "");
@@ -64,14 +65,35 @@ export function SettingsView() {
       <PageHeader title="Settings" subtitle="Personalize your workspace and manage your data." />
 
       <Panel className="stack gap-md">
-        <span className="row gap-sm">
-          <UserRound size={18} /> <strong>Profile</strong>
-        </span>
+        <div className="row between wrap gap-sm">
+          <span className="row gap-sm">
+            <UserRound size={18} /> <strong>Profile</strong>
+          </span>
+          <button className="btn btn-sm" onClick={openProfileSetup}>
+            Edit profile setup
+          </button>
+        </div>
+
+        <div className="row gap-md" style={{ alignItems: "center" }}>
+          <span className="avatar avatar-lg" style={{ background: state.profile.avatarColor || "#0d9488" }}>
+            {initialsOf(state.profileName) || "?"}
+          </span>
+          <div className="stack" style={{ gap: 2, minWidth: 0 }}>
+            <strong>{state.profileName || "Unnamed investor"}</strong>
+            <span className="small muted">
+              {[experienceLabel(state.profile.experience), focusLabel(state.profile.focus)]
+                .filter(Boolean)
+                .join(" · ") || "No experience or focus set yet"}
+            </span>
+          </div>
+        </div>
+
         <form className="row wrap gap-sm" onSubmit={saveName}>
           <div className="field grow">
             <label htmlFor="profile-name">Your name</label>
             <input
               id="profile-name"
+              name="name"
               className="input"
               value={name}
               onChange={(e) => setName(e.target.value)}

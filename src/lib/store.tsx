@@ -105,6 +105,9 @@ export type AppApi = {
   tourOpen: boolean;
   openTour: () => void;
   closeTour: () => void;
+  profileSetupOpen: boolean;
+  openProfileSetup: () => void;
+  closeProfileSetup: () => void;
   refreshMarket: () => void;
   actions: {
     buy: (input: { symbol: string; shares: number; price: number }) => void;
@@ -123,6 +126,7 @@ export type AppApi = {
     completeLesson: (lessonId: string) => void;
     setInvestorType: (type: Exclude<AppState["investor"]["type"], "unspecified">) => void;
     setProfileName: (name: string) => void;
+    saveProfile: (input: mutations.ProfileInput) => void;
     completeOnboarding: () => void;
     reset: () => void;
     importJson: (raw: string) => void;
@@ -142,14 +146,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [market, setMarket] = useState<MarketState>({ status: "loading", quotes: [] });
   const [manualTourOpen, setManualTourOpen] = useState(false);
+  const [manualProfileOpen, setManualProfileOpen] = useState(false);
 
   useEffect(() => {
     ensureInit();
   }, []);
 
-  // The tour auto-shows for brand-new users (onboardedAt null) and can be
-  // reopened manually. Finishing sets onboardedAt, which hides the auto case.
-  const tourOpen = manualTourOpen || (Boolean(state) && !state?.onboardedAt);
+  // First-run flow (all derived — no set-state-in-effect):
+  // 1) brand-new users complete profile setup, then 2) the feature tour.
+  const profileSetupOpen = manualProfileOpen || (Boolean(state) && !state?.profileSetupAt);
+  const tourOpen =
+    manualTourOpen || (Boolean(state) && Boolean(state?.profileSetupAt) && !state?.onboardedAt);
 
   const symbolsKey = requestSymbols(state).sort().join(",");
 
@@ -199,6 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeLesson: (lessonId) => mutate((s) => mutations.completeLesson(s, lessonId)),
       setInvestorType: (type) => mutate((s) => mutations.setInvestorType(s, type)),
       setProfileName: (name) => mutate((s) => mutations.setProfileName(s, name)),
+      saveProfile: (input) => mutate((s) => mutations.saveProfile(s, input)),
       completeOnboarding: () => mutate((s) => mutations.completeOnboarding(s)),
       reset: () => setCurrent(mutations.createInitialState()),
       importJson: (raw) => setCurrent(mutations.importStateJson(raw)),
@@ -216,6 +224,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     tourOpen,
     openTour: () => setManualTourOpen(true),
     closeTour: () => setManualTourOpen(false),
+    profileSetupOpen,
+    openProfileSetup: () => setManualProfileOpen(true),
+    closeProfileSetup: () => setManualProfileOpen(false),
     refreshMarket: () => void refreshMarket(),
     actions,
   };

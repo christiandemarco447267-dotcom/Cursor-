@@ -103,6 +103,8 @@ export function createInitialState(): AppState {
     version: SCHEMA_VERSION,
     profileName: "",
     onboardedAt: null,
+    profileSetupAt: null,
+    profile: { experience: null, focus: null, avatarColor: "#0d9488" },
     cash: runningCash,
     holdings,
     goals: [],
@@ -365,6 +367,28 @@ export function setProfileName(state: AppState, name: string): AppState {
 export function completeOnboarding(state: AppState): AppState {
   if (state.onboardedAt) return state;
   return commit({ ...state, onboardedAt: nowIso() });
+}
+
+export type ProfileInput = {
+  name?: string;
+  experience?: AppState["profile"]["experience"];
+  focus?: AppState["profile"]["focus"];
+  avatarColor?: string;
+};
+
+/** Save profile fields. Marks the profile as set up (once) so the wizard won't reappear. */
+export function saveProfile(state: AppState, input: ProfileInput): AppState {
+  const profile = {
+    experience: input.experience !== undefined ? input.experience : state.profile.experience,
+    focus: input.focus !== undefined ? input.focus : state.profile.focus,
+    avatarColor: input.avatarColor ?? state.profile.avatarColor,
+  };
+  return commit({
+    ...state,
+    profileName: (input.name ?? state.profileName).trim().slice(0, 40),
+    profile,
+    profileSetupAt: state.profileSetupAt ?? nowIso(),
+  });
 }
 
 // ---- Investor profile ----------------------------------------------------
