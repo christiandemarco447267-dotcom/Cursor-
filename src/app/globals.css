@@ -6,26 +6,27 @@
 }
 
 :root {
-  --bg: #ecf8f3;
+  --bg: #eef4f3;
   --bg-soft: #ffffff;
-  --panel: rgba(255, 255, 255, 0.72);
-  --panel-strong: rgba(255, 255, 255, 0.92);
-  --border: rgba(13, 148, 136, 0.18);
-  --border-strong: rgba(13, 148, 136, 0.32);
-  --text: #0e2e2a;
-  --text-muted: #4b665f;
-  --text-dim: #7d948d;
+  --panel: rgba(255, 255, 255, 0.85);
+  --panel-strong: rgba(255, 255, 255, 0.96);
+  --border: rgba(15, 46, 42, 0.1);
+  --border-strong: rgba(15, 46, 42, 0.16);
+  --text: #10241f;
+  --text-muted: #52655f;
+  --text-dim: #86928c;
   --primary: #0d9488;
   --primary-strong: #0f766e;
-  --primary-soft: rgba(13, 148, 136, 0.14);
+  --primary-soft: rgba(13, 148, 136, 0.12);
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
-  --gain: #059669;
+  --gain: #047857;
   --loss: #dc2626;
-  --radius: 18px;
-  --radius-lg: 24px;
-  --shadow: 0 24px 48px -28px rgba(15, 60, 55, 0.22);
-  --glow-primary: 0 12px 30px -12px rgba(13, 148, 136, 0.45);
+  --radius: 16px;
+  --radius-lg: 22px;
+  --shadow: 0 20px 40px -24px rgba(15, 46, 42, 0.2);
+  --card-shadow: 0 1px 2px rgba(15, 46, 42, 0.05), 0 12px 28px -20px rgba(15, 46, 42, 0.22);
+  --glow-primary: 0 10px 24px -12px rgba(13, 148, 136, 0.38);
 }
 
 * {
@@ -51,9 +52,8 @@ body {
   font-family: var(--font-sans);
   color: var(--text);
   background:
-    radial-gradient(1100px 740px at 82% -12%, rgba(94, 234, 212, 0.5), transparent 60%),
-    radial-gradient(820px 620px at 2% 2%, rgba(59, 130, 246, 0.16), transparent 55%),
-    radial-gradient(780px 580px at 96% 110%, rgba(167, 243, 208, 0.55), transparent 62%),
+    radial-gradient(1200px 820px at 88% -18%, rgba(45, 212, 191, 0.16), transparent 62%),
+    radial-gradient(1000px 720px at -5% -5%, rgba(59, 130, 246, 0.09), transparent 58%),
     var(--bg);
   background-attachment: fixed;
   min-height: 100vh;
@@ -135,6 +135,7 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  box-shadow: var(--card-shadow);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
@@ -152,11 +153,9 @@ button {
   isolation: isolate;
   border-color: transparent;
   background:
-    linear-gradient(180deg, rgba(94, 234, 212, 0.1), rgba(59, 130, 246, 0.04)),
-    rgba(255, 255, 255, 0.85);
-  box-shadow:
-    0 22px 44px -30px rgba(15, 60, 55, 0.32),
-    0 0 0 1px rgba(13, 148, 136, 0.06) inset;
+    linear-gradient(180deg, rgba(45, 212, 191, 0.06), rgba(59, 130, 246, 0.03)),
+    var(--panel-strong);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
 }
 /* Iridescent animated border via masked gradient ring. */
@@ -167,8 +166,8 @@ button {
   z-index: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, #5eead4, #34d399, #38bdf8, #2563eb, #5eead4);
-  background-size: 300% 300%;
+  background: linear-gradient(120deg, var(--primary), var(--accent), var(--primary));
+  background-size: 220% 220%;
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -177,28 +176,13 @@ button {
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  opacity: 0.75;
-  animation: holo-shift 9s linear infinite;
+  opacity: 0.4;
+  animation: holo-shift 16s linear infinite;
   pointer-events: none;
 }
-/* Diagonal light sheen that drifts across the surface (behind content). */
+/* Sheen removed for a cleaner, more professional finish. */
 .holo::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    115deg,
-    transparent 34%,
-    rgba(56, 189, 248, 0.16) 46%,
-    rgba(94, 234, 212, 0.16) 54%,
-    transparent 66%
-  );
-  background-size: 250% 250%;
-  mix-blend-mode: multiply;
-  animation: holo-sheen 7s ease-in-out infinite;
-  pointer-events: none;
+  content: none;
 }
 /* Keep real content crisp and above the effects. */
 .holo > * {
@@ -206,9 +190,7 @@ button {
   z-index: 1;
 }
 .holo:hover {
-  box-shadow:
-    0 28px 56px -30px rgba(13, 148, 136, 0.45),
-    0 0 0 1px rgba(13, 148, 136, 0.12) inset;
+  box-shadow: 0 1px 2px rgba(15, 46, 42, 0.05), 0 18px 36px -20px rgba(13, 148, 136, 0.26);
 }
 @keyframes holo-shift {
   0% {
@@ -235,10 +217,11 @@ button {
 
 .hero-balance {
   background:
-    radial-gradient(620px 220px at 100% 0%, rgba(94, 234, 212, 0.35), transparent 70%),
-    linear-gradient(180deg, rgba(94, 234, 212, 0.16), rgba(59, 130, 246, 0.05));
-  border-color: rgba(13, 148, 136, 0.28);
-  box-shadow: 0 28px 56px -34px rgba(13, 148, 136, 0.4);
+    radial-gradient(680px 240px at 100% -10%, rgba(45, 212, 191, 0.16), transparent 72%),
+    linear-gradient(180deg, rgba(45, 212, 191, 0.07), rgba(59, 130, 246, 0.035)),
+    var(--panel-strong);
+  border-color: rgba(13, 148, 136, 0.2);
+  box-shadow: var(--card-shadow);
 }
 .text-gradient {
   background: linear-gradient(100deg, var(--primary) 0%, var(--accent) 100%);
