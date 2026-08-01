@@ -20,7 +20,9 @@ import {
 } from "./types";
 import { LIMITS } from "./validation";
 
-export const STORAGE_KEY = "ainvestpro.state.v2";
+export const STORAGE_KEY = "trellis.state.v2";
+// Older keys read as a fallback so data from before the rebrand isn't lost.
+export const LEGACY_STORAGE_KEYS = ["ainvestpro.state.v2"];
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -433,6 +435,6 @@ export function loadStateFromString(raw: string | null): AppState {
 export function importStateJson(raw: string): AppState {
   const parsed: unknown = JSON.parse(raw);
   const migrated = migrateUnknown(parsed);
-  if (!migrated) throw new Error("This file is not a valid AInvestPro backup.");
+  if (!migrated) throw new Error("This file is not a valid Trellis backup.");
   return migrated;
 }

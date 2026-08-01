@@ -89,7 +89,7 @@ export function DashboardHome() {
         <Panel className="row between wrap gap-md">
           <div className="stack" style={{ gap: 2 }}>
             <strong>Make it yours</strong>
-            <span className="small muted">Add your name so AInvestPro can greet you.</span>
+            <span className="small muted">Add your name so Trellis can greet you.</span>
           </div>
           <form className="row gap-sm" onSubmit={saveName}>
             <input

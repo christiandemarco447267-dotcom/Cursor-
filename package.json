@@ -1,8 +1,8 @@
 {
-  "name": "ainvestpro",
+  "name": "trellis",
   "version": "1.0.0",
   "private": true,
-  "description": "AInvestPro — a stable, professional paper-trading coach (goals, theses, lessons, mood check-ins) with local-first data.",
+  "description": "Trellis — a stable, professional paper-trading coach (goals, theses, lessons, mood check-ins) with local-first data.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

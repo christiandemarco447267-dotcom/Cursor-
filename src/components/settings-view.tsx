@@ -28,7 +28,7 @@ export function SettingsView() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ainvestpro-backup-${localDayKey(new Date())}.json`;
+    link.download = `trellis-backup-${localDayKey(new Date())}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage({ tone: "ok", text: "Backup downloaded." });

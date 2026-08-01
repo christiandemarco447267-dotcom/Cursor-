@@ -1,8 +1,8 @@
-# AInvestPro
+# Trellis
 
-A stable, professional rebuild of the **AInvestPro** paper-trading coach. It's an
-educational, local-first app for practicing a disciplined investing *process* — not a
-brokerage and not investment advice.
+**Trellis** is a stable, professional paper-trading coach — an educational, local-first
+app for practicing a disciplined investing *process* (the structure that supports your
+growth). Not a brokerage and not investment advice.
 
 ## What's new in this rebuild
 

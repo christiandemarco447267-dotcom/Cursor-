@@ -12,7 +12,7 @@ import {
 import { DEMO_UNIVERSE, demoSnapshot } from "./market";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
-import { loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
+import { LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
 import type { AppState, MarketSnapshot, MarketStatus, Quote } from "./types";
 
 // ---- Module store (single source of truth, survives re-renders) ----------
@@ -52,11 +52,22 @@ function setCurrent(next: AppState) {
   emit();
 }
 
+function readStoredRaw(): string | null {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return raw;
+  // Fall back to a pre-rebrand key so existing data carries over.
+  for (const key of LEGACY_STORAGE_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) return legacy;
+  }
+  return null;
+}
+
 function ensureInit() {
   if (initialized) return;
   initialized = true;
-  current = loadStateFromString(localStorage.getItem(STORAGE_KEY));
-  persist(current); // normalize/migrate on disk
+  current = loadStateFromString(readStoredRaw());
+  persist(current); // normalize/migrate on disk (under the new key)
   emit();
 
   window.addEventListener("storage", (event) => {
