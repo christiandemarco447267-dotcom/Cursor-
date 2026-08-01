@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Fraunces } from "next/font/google";
+import { Dancing_Script, DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
+
+const dancingScript = Dancing_Script({
+  variable: "--font-brand",
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -31,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${fraunces.variable} ${dancingScript.variable}`}>
       <body className="antialiased">{children}</body>
     </html>
   );
