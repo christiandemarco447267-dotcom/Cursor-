@@ -39,7 +39,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 
 export function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "gain" | "loss" }) {
   return (
-    <Panel className="stack gap-sm">
+    <Panel className="holo stack gap-sm">
       <span className="eyebrow">{label}</span>
       <span className={clsx("value-lg", tone)}>{value}</span>
       {hint ? <span className="small muted">{hint}</span> : null}

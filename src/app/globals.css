@@ -6,23 +6,26 @@
 }
 
 :root {
-  --bg: #0b1220;
-  --bg-soft: #101a2e;
-  --panel: rgba(255, 255, 255, 0.04);
-  --panel-strong: rgba(255, 255, 255, 0.07);
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #eef2f8;
-  --text-muted: #9aa7bd;
-  --text-dim: #6b7890;
-  --primary: #14b8a6;
-  --primary-strong: #0f766e;
-  --accent: #f4c05b;
-  --gain: #34d399;
+  --bg: #070e22;
+  --bg-soft: #0d1734;
+  --panel: rgba(120, 150, 220, 0.05);
+  --panel-strong: rgba(130, 165, 235, 0.09);
+  --border: rgba(120, 150, 220, 0.16);
+  --border-strong: rgba(130, 165, 235, 0.3);
+  --text: #eef3fb;
+  --text-muted: #9db0d2;
+  --text-dim: #6577a0;
+  --primary: #3b82f6;
+  --primary-strong: #2563eb;
+  --primary-soft: rgba(59, 130, 246, 0.16);
+  --accent: #a3e635;
+  --accent-strong: #84cc16;
+  --gain: #4ade80;
   --loss: #f87171;
   --radius: 18px;
   --radius-lg: 24px;
-  --shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.7);
+  --shadow: 0 24px 48px -28px rgba(2, 8, 25, 0.9);
+  --glow-primary: 0 10px 30px -10px rgba(59, 130, 246, 0.55);
 }
 
 * {
@@ -35,13 +38,24 @@ body {
   margin: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Guard against accidental horizontal scrolling on small screens. */
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--text);
   background:
-    radial-gradient(1200px 800px at 80% -10%, rgba(20, 184, 166, 0.12), transparent 60%),
-    radial-gradient(900px 600px at 0% 10%, rgba(244, 192, 91, 0.08), transparent 55%),
+    radial-gradient(1150px 760px at 80% -12%, rgba(59, 130, 246, 0.22), transparent 60%),
+    radial-gradient(820px 620px at 6% 4%, rgba(37, 99, 235, 0.16), transparent 55%),
+    radial-gradient(760px 560px at 92% 108%, rgba(163, 230, 53, 0.07), transparent 60%),
     var(--bg);
+  background-attachment: fixed;
   min-height: 100vh;
   line-height: 1.5;
 }
@@ -98,6 +112,7 @@ button {
 }
 .grow {
   flex: 1;
+  min-width: 0;
 }
 
 .grid {
@@ -120,6 +135,7 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .panel-strong {
@@ -128,6 +144,107 @@ button {
 }
 .panel-pad-lg {
   padding: 28px;
+}
+
+/* ---------- Holographic widgets ---------- */
+.holo {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent;
+  background:
+    linear-gradient(180deg, rgba(130, 165, 235, 0.08), rgba(59, 130, 246, 0.03)),
+    rgba(10, 18, 40, 0.5);
+  box-shadow:
+    0 24px 48px -30px rgba(2, 8, 25, 0.9),
+    0 0 0 1px rgba(120, 150, 220, 0.06) inset;
+  overflow: hidden;
+}
+/* Iridescent animated border via masked gradient ring. */
+.holo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #7cb0ff, #a3e635, #22d3ee, #c084fc, #7cb0ff);
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.75;
+  animation: holo-shift 9s linear infinite;
+  pointer-events: none;
+}
+/* Diagonal light sheen that drifts across the surface (behind content). */
+.holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(124, 176, 255, 0.1) 46%,
+    rgba(163, 230, 53, 0.08) 54%,
+    transparent 66%
+  );
+  background-size: 250% 250%;
+  mix-blend-mode: screen;
+  animation: holo-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+/* Keep real content crisp and above the effects. */
+.holo > * {
+  position: relative;
+  z-index: 1;
+}
+.holo:hover {
+  box-shadow:
+    0 30px 60px -30px rgba(59, 130, 246, 0.5),
+    0 0 0 1px rgba(120, 150, 220, 0.1) inset;
+}
+@keyframes holo-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+@keyframes holo-sheen {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -30% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .holo::before,
+  .holo::after {
+    animation: none;
+  }
+}
+
+.hero-balance {
+  background:
+    radial-gradient(620px 220px at 100% 0%, rgba(59, 130, 246, 0.2), transparent 70%),
+    linear-gradient(180deg, rgba(59, 130, 246, 0.1), rgba(130, 165, 235, 0.03));
+  border-color: rgba(59, 130, 246, 0.28);
+  box-shadow: 0 30px 60px -34px rgba(37, 99, 235, 0.55);
+}
+.text-gradient {
+  background: linear-gradient(100deg, #7cb0ff 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* ---------- Text ---------- */
@@ -181,14 +298,14 @@ button {
   font-weight: 500;
 }
 .pill-accent {
-  background: rgba(244, 192, 91, 0.14);
-  border-color: rgba(244, 192, 91, 0.3);
+  background: rgba(163, 230, 53, 0.14);
+  border-color: rgba(163, 230, 53, 0.32);
   color: var(--accent);
 }
 .pill-primary {
-  background: rgba(20, 184, 166, 0.16);
-  border-color: rgba(20, 184, 166, 0.32);
-  color: var(--primary);
+  background: var(--primary-soft);
+  border-color: rgba(59, 130, 246, 0.34);
+  color: #7cb0ff;
 }
 .badge {
   display: inline-flex;
@@ -200,7 +317,7 @@ button {
   font-weight: 600;
 }
 .badge-gain {
-  background: rgba(52, 211, 153, 0.14);
+  background: rgba(74, 222, 128, 0.14);
   color: var(--gain);
 }
 .badge-loss {
@@ -235,13 +352,14 @@ button {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(180deg, var(--primary), var(--primary-strong));
+  background: linear-gradient(180deg, #4f8ef7, var(--primary-strong));
   border-color: transparent;
-  color: #04211d;
+  color: #ffffff;
+  box-shadow: var(--glow-primary);
 }
 .btn-primary:hover {
   border-color: transparent;
-  filter: brightness(1.05);
+  filter: brightness(1.06);
 }
 .btn-danger {
   border-color: rgba(248, 113, 113, 0.4);
@@ -288,7 +406,7 @@ button {
 .select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
 }
 .textarea {
   resize: vertical;
@@ -341,8 +459,8 @@ button {
   place-items: center;
   font-weight: 700;
   font-size: 13px;
-  background: rgba(20, 184, 166, 0.14);
-  color: var(--primary);
+  background: rgba(59, 130, 246, 0.16);
+  color: #7cb0ff;
   flex-shrink: 0;
 }
 
@@ -393,14 +511,11 @@ button {
   padding: 4px 8px 18px;
 }
 .brand-mark {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  background: linear-gradient(140deg, var(--primary), var(--accent));
-  display: grid;
-  place-items: center;
-  color: #04211d;
-  font-weight: 800;
+  object-fit: cover;
+  box-shadow: 0 6px 18px -6px rgba(59, 130, 246, 0.75);
 }
 .nav-link {
   display: flex;
@@ -458,6 +573,7 @@ button {
   background-image: url("/hero-grid.svg");
   background-size: 48px 48px;
   opacity: 0.25;
+  -webkit-mask-image: radial-gradient(900px 600px at 70% 0%, black, transparent 70%);
   mask-image: radial-gradient(900px 600px at 70% 0%, black, transparent 70%);
   pointer-events: none;
 }
@@ -472,7 +588,7 @@ button {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(20, 184, 166, 0.14);
+  background: rgba(59, 130, 246, 0.16);
   color: var(--primary);
 }
 
@@ -499,7 +615,7 @@ button {
 }
 .mood-chip.selected {
   border-color: var(--primary);
-  background: rgba(20, 184, 166, 0.14);
+  background: rgba(59, 130, 246, 0.16);
   color: var(--text);
 }
 .mood-emoji {
@@ -580,6 +696,25 @@ button {
   .main {
     padding: 20px 16px 96px;
   }
+  .container {
+    padding: 0 16px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .panel-pad-lg {
+    padding: 18px;
+  }
+  .landing-hero {
+    padding: 56px 0 40px;
+  }
+  /* Sparklines are decorative; drop them in dense list rows to save width. */
+  .list-row .sparkline {
+    display: none;
+  }
+  .value-xl {
+    word-break: break-word;
+  }
   .grid-2,
   .grid-3,
   .grid-4 {
@@ -598,6 +733,7 @@ button {
     padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
     background: rgba(11, 18, 32, 0.92);
     border-top: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
   .bottom-nav::-webkit-scrollbar {

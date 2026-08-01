@@ -92,6 +92,7 @@ export type InvestorType = z.infer<typeof InvestorProfileSchema>["type"];
 
 export const AppStateSchema = z.object({
   version: z.literal(SCHEMA_VERSION),
+  profileName: z.string().trim().max(40).default(""),
   cash: z.number().nonnegative().max(LIMITS.maxMoney),
   holdings: z.array(HoldingSchema).max(LIMITS.maxHoldings),
   goals: z.array(GoalSchema).max(LIMITS.maxGoals),

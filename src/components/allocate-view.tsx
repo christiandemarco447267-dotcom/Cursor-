@@ -6,7 +6,7 @@ import { allocationSlices } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { EmptyState, Loading, Panel, PageHeader } from "./ui";
 
-const COLORS = ["#14b8a6", "#f4c05b", "#6366f1", "#f87171", "#38bdf8", "#a78bfa", "#fb923c", "#34d399", "#e879f9", "#94a3b8"];
+const COLORS = ["#3b82f6", "#a3e635", "#38bdf8", "#818cf8", "#22d3ee", "#4ade80", "#60a5fa", "#c084fc", "#facc15", "#94a3b8"];
 
 export function AllocateView() {
   const { ready, summary } = useApp();

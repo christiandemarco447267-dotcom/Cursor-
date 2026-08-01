@@ -49,7 +49,8 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <Link href="/" className="brand">
-        <span className="brand-mark">A</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icon.png" alt="AInvestPro logo" className="brand-mark" width={36} height={36} />
         AInvestPro
       </Link>
       {SECTIONS.map((section) => (
