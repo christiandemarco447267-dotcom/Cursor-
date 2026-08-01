@@ -65,10 +65,7 @@ export function DashboardHome() {
     <div className="stack gap-lg animate-in">
       <div className="row between wrap gap-md">
         <div className="stack gap-sm">
-          <span className="eyebrow">
-            {greeting()}
-            {firstName ? `, ${firstName}` : ""}
-          </span>
+          <span className="eyebrow">{greeting()}</span>
           <h1 style={{ fontSize: "2rem" }}>
             {firstName ? `Welcome back, ${firstName}` : "Your investing workspace"}
           </h1>
