@@ -11,14 +11,16 @@ import {
   Home,
   Lightbulb,
   LineChart,
+  Menu,
   NotebookPen,
   PieChart,
   Settings,
   Target,
   UserRound,
   Wallet,
+  X,
 } from "lucide-react";
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { AppProvider, useApp } from "@/lib/store";
 import { experienceLabel, initialsOf } from "@/lib/profile";
 import { OnboardingTour } from "./onboarding-tour";
@@ -48,14 +50,48 @@ function useIsActive() {
   return (href: string) => (href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(`${href}/`));
 }
 
-function ProfileChip() {
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const isActive = useIsActive();
+  return (
+    <>
+      {SECTIONS.map((section) => (
+        <div key={section}>
+          <div className="nav-section">{section}</div>
+          {NAV.filter((item) => item.section === section).map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={onNavigate}
+              className={clsx("nav-link", isActive(href) && "active")}
+            >
+              <Icon size={18} />
+              {label}
+            </Link>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function BrandMark({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link href="/" className="brand" onClick={onClick}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
+      Sentia
+    </Link>
+  );
+}
+
+function ProfileChip({ onNavigate }: { onNavigate?: () => void }) {
   const { state } = useApp();
   const name = state?.profileName ?? "";
   const initials = initialsOf(name);
   const color = state?.profile.avatarColor || "#0d9488";
   const subtitle = experienceLabel(state?.profile.experience ?? null) || "Tap to personalize";
   return (
-    <Link href="/app/settings" className="profile-chip" style={{ marginTop: "auto" }}>
+    <Link href="/app/settings" onClick={onNavigate} className="profile-chip" style={{ marginTop: "auto" }}>
       <span className="avatar" style={{ background: color }}>
         {initials || <UserRound size={18} />}
       </span>
@@ -68,54 +104,71 @@ function ProfileChip() {
 }
 
 function Sidebar() {
-  const isActive = useIsActive();
   return (
     <aside className="sidebar">
-      <Link href="/" className="brand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
-        Sentia
-      </Link>
-      {SECTIONS.map((section) => (
-        <div key={section}>
-          <div className="nav-section">{section}</div>
-          {NAV.filter((item) => item.section === section).map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={clsx("nav-link", isActive(href) && "active")}>
-              <Icon size={18} />
-              {label}
-            </Link>
-          ))}
-        </div>
-      ))}
+      <BrandMark />
+      <NavLinks />
       <ProfileChip />
     </aside>
   );
 }
 
-function BottomNav() {
-  const isActive = useIsActive();
+function MobileTopBar({ onMenu }: { onMenu: () => void }) {
   return (
-    <nav className="bottom-nav">
-      {NAV.map(({ href, label, icon: Icon }) => (
-        <Link key={href} href={href} className={clsx("bottom-link", isActive(href) && "active")}>
-          <Icon size={20} />
-          {label}
-        </Link>
-      ))}
-    </nav>
+    <header className="topbar">
+      <BrandMark />
+      <button className="btn btn-icon" onClick={onMenu} aria-label="Open menu">
+        <Menu size={20} />
+      </button>
+    </header>
+  );
+}
+
+function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <div
+      className={clsx("drawer-overlay", open && "open")}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      aria-hidden={!open}
+    >
+      <aside className={clsx("drawer", open && "open")}>
+        <div className="row between" style={{ marginBottom: 4 }}>
+          <BrandMark onClick={onClose} />
+          <button className="btn btn-icon" onClick={onClose} aria-label="Close menu">
+            <X size={18} />
+          </button>
+        </div>
+        <NavLinks onNavigate={onClose} />
+        <ProfileChip onNavigate={onClose} />
+      </aside>
+    </div>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  return (
+    <>
+      <div className="shell">
+        <Sidebar />
+        <main className="main">
+          <MobileTopBar onMenu={() => setDrawerOpen(true)} />
+          {children}
+        </main>
+      </div>
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <ProfileSetup />
+      <OnboardingTour />
+    </>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AppProvider>
-      <div className="shell">
-        <Sidebar />
-        <main className="main">{children}</main>
-        <BottomNav />
-      </div>
-      <ProfileSetup />
-      <OnboardingTour />
+      <Shell>{children}</Shell>
     </AppProvider>
   );
 }
