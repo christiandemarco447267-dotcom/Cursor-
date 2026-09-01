@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, LineChart, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import { assetPath } from "@/lib/asset";
 
 const TRUST = [
   {
@@ -22,12 +23,12 @@ const TRUST = [
 export function Landing() {
   return (
     <main className="landing">
-      <div className="hero-grid-bg" />
+      <div className="hero-grid-bg" style={{ backgroundImage: `url(${assetPath("/hero-grid.svg")})` }} />
       <div className="container" style={{ position: "relative" }}>
         <header className="row between" style={{ padding: "24px 0" }}>
           <div className="brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
+            <img src={assetPath("/icon.png")} alt="Sentia logo" className="brand-mark" width={36} height={36} />
             Sentia
           </div>
           <Link href="/app" className="btn btn-sm">

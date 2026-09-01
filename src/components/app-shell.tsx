@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { AppProvider, useApp } from "@/lib/store";
+import { assetPath } from "@/lib/asset";
 import { experienceLabel, initialsOf } from "@/lib/profile";
 import { OnboardingTour } from "./onboarding-tour";
 import { ProfileSetup } from "./profile-setup";
@@ -70,7 +71,7 @@ function BrandMark({ onClick }: { onClick?: () => void }) {
   return (
     <Link href="/" className="brand" onClick={onClick}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icon.png" alt="Sentia logo" className="brand-mark" width={36} height={36} />
+      <img src={assetPath("/icon.png")} alt="Sentia logo" className="brand-mark" width={36} height={36} />
       Sentia
     </Link>
   );

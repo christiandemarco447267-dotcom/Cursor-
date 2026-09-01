@@ -597,7 +597,7 @@ button {
 .hero-grid-bg {
   position: absolute;
   inset: 0;
-  background-image: url("/hero-grid.svg");
+  /* background-image is set inline (base-path aware) in Landing. */
   background-size: 48px 48px;
   opacity: 0.25;
   -webkit-mask-image: radial-gradient(900px 600px at 70% 0%, black, transparent 70%);
