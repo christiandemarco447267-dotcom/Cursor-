@@ -1,7 +1,5 @@
-import { processSignals } from "./gamification";
 import type { PortfolioSummary } from "./portfolio";
 import type { AppState } from "./types";
-import { localDayKey } from "./market";
 
 export type InsightTone = "good" | "watch" | "info";
 
@@ -12,26 +10,32 @@ export type Insight = {
   tone: InsightTone;
 };
 
-/**
- * Rule-based coaching. All cards derive from the same `processSignals` used for
- * the health grade, so advice can never contradict the grade the user is shown.
- */
-export function buildInsights(state: AppState, summary: PortfolioSummary, today = localDayKey(new Date())): Insight[] {
-  const signals = processSignals(state, today);
+/** Rule-based coaching derived directly from the portfolio and theses. */
+export function buildInsights(state: AppState, summary: PortfolioSummary): Insight[] {
   const insights: Insight[] = [];
+  const holdingsCount = state.holdings.length;
 
-  // 1. Health / process summary
-  insights.push({
-    id: "process",
-    title: signals.score >= 5 ? "Strong process" : "Build your process",
-    body:
-      signals.score >= 5
-        ? "You're diversified, have theses on file, keep a cash buffer, and set goals. Keep reviewing rather than reacting."
-        : "Your process score has room to grow. Add positions with written theses, keep a cash buffer, and set at least one goal.",
-    tone: signals.score >= 5 ? "good" : "watch",
-  });
+  // 1. Diversification
+  if (holdingsCount === 0) {
+    insights.push({
+      id: "start",
+      title: "Start your book",
+      body: "You have cash to deploy. Buy your first position on the Trade screen and pair it with a thesis.",
+      tone: "info",
+    });
+  } else {
+    insights.push({
+      id: "diversification",
+      title: holdingsCount >= 4 ? "Well diversified" : "Broaden your book",
+      body:
+        holdingsCount >= 4
+          ? `You hold ${holdingsCount} positions — a diversified base that reduces single-name risk.`
+          : `You hold ${holdingsCount} position${holdingsCount === 1 ? "" : "s"}. Adding a few more uncorrelated names spreads your risk.`,
+      tone: holdingsCount >= 4 ? "good" : "watch",
+    });
+  }
 
-  // 2. Concentration check
+  // 2. Concentration
   const top = summary.holdings[0];
   if (top && summary.investments > 0) {
     const weight = (top.marketValue / summary.investments) * 100;
@@ -46,41 +50,34 @@ export function buildInsights(state: AppState, summary: PortfolioSummary, today 
     });
   }
 
-  // 3. Thesis coverage (uses thesisId links, kept consistent everywhere)
+  // 3. Cash buffer
+  if (summary.total > 0) {
+    const cashPct = (summary.cash / summary.total) * 100;
+    insights.push({
+      id: "cash",
+      title: "Cash on hand",
+      body:
+        cashPct < 2
+          ? "You're nearly fully invested. Keeping a little cash gives you room to act on opportunities without forced selling."
+          : `Cash is ${cashPct.toFixed(0)}% of your portfolio — dry powder for future buys.`,
+      tone: cashPct < 2 ? "watch" : "good",
+    });
+  }
+
+  // 4. Thesis coverage
   const unlinked = state.holdings.filter((h) => !h.thesisId);
-  insights.push({
-    id: "thesis-coverage",
-    title: "Thesis coverage",
-    body:
-      unlinked.length === 0 && state.holdings.length > 0
-        ? "Every holding is backed by a thesis. That's exactly the habit that separates investing from gambling."
-        : unlinked.length > 0
-          ? `${unlinked.length} holding${unlinked.length === 1 ? "" : "s"} (${unlinked
+  if (holdingsCount > 0) {
+    insights.push({
+      id: "thesis-coverage",
+      title: "Thesis coverage",
+      body:
+        unlinked.length === 0
+          ? "Every holding is backed by a thesis. That's the habit that separates investing from gambling."
+          : `${unlinked.length} holding${unlinked.length === 1 ? "" : "s"} (${unlinked
               .map((h) => h.symbol)
               .slice(0, 4)
-              .join(", ")}) lack a linked thesis. Write one so future-you knows why you bought.`
-          : "Add a holding and pair it with a thesis to start building coverage.",
-    tone: unlinked.length === 0 && state.holdings.length > 0 ? "good" : "watch",
-  });
-
-  // 4. Behavioral cue from latest check-in
-  const latest = state.checkIns[0];
-  if (latest && (latest.mood === "fomo" || latest.mood === "anxious")) {
-    insights.push({
-      id: "behavior",
-      title: "Mind your emotions",
-      body:
-        latest.mood === "fomo"
-          ? "Your last check-in flagged FOMO. Before chasing a move, re-read your thesis and stick to your plan."
-          : "Your last check-in flagged anxiety. Volatility is normal — avoid panic-selling and revisit why you hold each position.",
-      tone: "watch",
-    });
-  } else if (!signals.reflectedRecently) {
-    insights.push({
-      id: "reflect",
-      title: "Time to reflect",
-      body: "You haven't checked in this week. A quick mood log helps you notice emotional patterns before they drive trades.",
-      tone: "info",
+              .join(", ")}) lack a linked thesis. Write one so future-you knows why you bought.`,
+      tone: unlinked.length === 0 ? "good" : "watch",
     });
   }
 

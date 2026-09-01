@@ -3,7 +3,6 @@ import { test } from "node:test";
 import {
   addThesis,
   buy,
-  contributeToGoal,
   createInitialState,
   deposit,
   importStateJson,
@@ -23,11 +22,10 @@ test("createInitialState produces a schema-valid, reconciled ledger", () => {
   assert.equal(state.cash, last.cashAfter);
 });
 
-test("buy moves cash, awards XP, and appends a transaction", () => {
+test("buy moves cash and appends a transaction", () => {
   const start = createInitialState();
   const next = buy(start, { symbol: "AAPL", shares: 10, price: 100 });
   assert.equal(next.cash, Math.round((start.cash - 1000) * 100) / 100);
-  assert.ok(next.gamification.xp > start.gamification.xp);
   assert.equal(next.transactions[next.transactions.length - 1].type, "buy");
   assert.ok(next.holdings.some((h) => h.symbol === "AAPL"));
 });
@@ -47,13 +45,6 @@ test("sell realizes P/L into the transaction ledger", () => {
   assert.equal(tx.realizedGain, 200);
 });
 
-test("contributeToGoal clamps at zero and never exceeds nothing negative", () => {
-  const withGoal = createInitialState();
-  const added = { ...withGoal, goals: [{ id: crypto.randomUUID(), title: "Fund", targetAmount: 1000, currentAmount: 50, deadline: undefined, createdAt: withGoal.createdAt, updatedAt: withGoal.updatedAt }] };
-  const reduced = contributeToGoal(added, added.goals[0].id, -500);
-  assert.equal(reduced.goals[0].currentAmount, 0);
-});
-
 test("addThesis auto-links a matching holding that has no thesis", () => {
   const bought = buy(createInitialState(), { symbol: "AAPL", shares: 1, price: 100 });
   const withThesis = addThesis(bought, { symbol: "AAPL", title: "Quality", rationale: "Durable moat" });
@@ -62,7 +53,7 @@ test("addThesis auto-links a matching holding that has no thesis", () => {
   assert.equal(holding?.thesisId, thesis.id);
 });
 
-test("migrateUnknown upgrades a v1 state and rejects garbage", () => {
+test("migrateUnknown upgrades a v1 state (dropping removed fields) and rejects garbage", () => {
   const v1 = {
     version: 1,
     cash: 1000,
@@ -79,8 +70,11 @@ test("migrateUnknown upgrades a v1 state and rejects garbage", () => {
   const migrated = migrateUnknown(v1);
   assert.ok(migrated, "v1 should migrate");
   assert.equal(migrated?.version, 2);
-  assert.equal(migrated?.gamification.longestStreak, 3);
+  assert.equal(migrated?.holdings.length, 1);
   assert.ok(Array.isArray(migrated?.transactions));
+  // Removed features are no longer part of the state shape.
+  assert.equal("gamification" in (migrated as object), false);
+  assert.equal("goals" in (migrated as object), false);
 
   assert.equal(migrateUnknown({ nonsense: true }), null);
 });

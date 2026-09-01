@@ -156,17 +156,10 @@ export type AppApi = {
     sell: (input: { symbol: string; shares: number; price: number }) => void;
     deposit: (amount: number, note?: string) => void;
     withdraw: (amount: number, note?: string) => void;
-    addGoal: (input: { title: string; targetAmount: number; currentAmount: number; deadline?: string }) => void;
-    updateGoal: (id: string, patch: { title?: string; targetAmount?: number; deadline?: string }) => void;
-    contributeToGoal: (id: string, delta: number) => void;
-    removeGoal: (id: string) => void;
     addThesis: (input: { symbol: string; title: string; rationale: string; risks?: string; conviction?: number }) => void;
     updateThesis: (id: string, patch: { title?: string; rationale?: string; risks?: string; conviction?: number }) => void;
     removeThesis: (id: string) => void;
     linkHoldingToThesis: (holdingId: string, thesisId: string | undefined) => void;
-    addCheckIn: (input: { mood: AppState["checkIns"][number]["mood"]; note?: string }) => void;
-    completeLesson: (lessonId: string) => void;
-    setInvestorType: (type: Exclude<AppState["investor"]["type"], "unspecified">) => void;
     setProfileName: (name: string) => void;
     saveProfile: (input: mutations.ProfileInput) => void;
     completeOnboarding: () => void;
@@ -252,17 +245,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sell: (input) => mutate((s) => mutations.sell(s, input)),
       deposit: (amount, note) => mutate((s) => mutations.deposit(s, amount, note)),
       withdraw: (amount, note) => mutate((s) => mutations.withdraw(s, amount, note)),
-      addGoal: (input) => mutate((s) => mutations.addGoal(s, input)),
-      updateGoal: (id, patch) => mutate((s) => mutations.updateGoal(s, id, patch)),
-      contributeToGoal: (id, delta) => mutate((s) => mutations.contributeToGoal(s, id, delta)),
-      removeGoal: (id) => mutate((s) => mutations.removeGoal(s, id)),
       addThesis: (input) => mutate((s) => mutations.addThesis(s, input)),
       updateThesis: (id, patch) => mutate((s) => mutations.updateThesis(s, id, patch)),
       removeThesis: (id) => mutate((s) => mutations.removeThesis(s, id)),
       linkHoldingToThesis: (holdingId, thesisId) => mutate((s) => mutations.linkHoldingToThesis(s, holdingId, thesisId)),
-      addCheckIn: (input) => mutate((s) => mutations.addCheckIn(s, input)),
-      completeLesson: (lessonId) => mutate((s) => mutations.completeLesson(s, lessonId)),
-      setInvestorType: (type) => mutate((s) => mutations.setInvestorType(s, type)),
       setProfileName: (name) => mutate((s) => mutations.setProfileName(s, name)),
       saveProfile: (input) => mutate((s) => mutations.saveProfile(s, input)),
       completeOnboarding: () => mutate((s) => mutations.completeOnboarding(s)),

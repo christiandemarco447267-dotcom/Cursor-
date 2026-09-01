@@ -5,9 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
-  Compass,
-  GraduationCap,
-  HeartPulse,
   Home,
   Lightbulb,
   LineChart,
@@ -15,7 +12,6 @@ import {
   NotebookPen,
   PieChart,
   Settings,
-  Target,
   UserRound,
   Wallet,
   X,
@@ -34,16 +30,12 @@ const NAV: NavItem[] = [
   { href: "/app/trade", label: "Trade", icon: ArrowLeftRight, section: "Overview" },
   { href: "/app/markets", label: "Markets", icon: LineChart, section: "Overview" },
   { href: "/app/allocate", label: "Allocation", icon: PieChart, section: "Overview" },
-  { href: "/app/goals", label: "Goals", icon: Target, section: "Plan" },
-  { href: "/app/thesis", label: "Theses", icon: NotebookPen, section: "Plan" },
-  { href: "/app/insights", label: "Insights", icon: Lightbulb, section: "Plan" },
-  { href: "/app/learn", label: "Learn", icon: GraduationCap, section: "Grow" },
-  { href: "/app/check-in", label: "Check-in", icon: HeartPulse, section: "Grow" },
-  { href: "/app/quiz", label: "Quiz", icon: Compass, section: "Grow" },
-  { href: "/app/settings", label: "Settings", icon: Settings, section: "Grow" },
+  { href: "/app/thesis", label: "Theses", icon: NotebookPen, section: "Process" },
+  { href: "/app/insights", label: "Insights", icon: Lightbulb, section: "Process" },
+  { href: "/app/settings", label: "Settings", icon: Settings, section: "Process" },
 ];
 
-const SECTIONS = ["Overview", "Plan", "Grow"] as const;
+const SECTIONS = ["Overview", "Process"] as const;
 
 function useIsActive() {
   const pathname = usePathname();

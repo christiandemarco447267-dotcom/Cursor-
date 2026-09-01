@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Compass, HeartPulse, Sparkles, Target, Wallet } from "lucide-react";
+import { ArrowLeftRight, Compass, Lightbulb, NotebookPen, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
 import { useApp } from "@/lib/store";
 
@@ -17,11 +17,6 @@ type Step = {
 
 const STEPS: Step[] = [
   {
-    icon: Sparkles,
-    title: "Welcome to Sentia",
-    body: "Practice investing with a real process — no real money. You start with a demo portfolio and $25,000 in virtual cash to experiment with.",
-  },
-  {
     icon: ArrowLeftRight,
     title: "Buy & sell for real practice",
     body: "Trade against your cash balance. Sentia tracks your weighted-average cost basis and realizes profit or loss on every sale — just like the real thing.",
@@ -31,23 +26,23 @@ const STEPS: Step[] = [
   {
     icon: Wallet,
     title: "Track everything",
-    body: "Your Portfolio shows holdings, total value, and gains. Allocation shows how your money is spread across positions and cash.",
+    body: "Your Portfolio shows holdings, total value, and gains. Allocation shows how your capital is spread across positions and cash.",
     href: "/app/portfolio",
     cta: "View Portfolio",
   },
   {
-    icon: Target,
+    icon: NotebookPen,
     title: "Invest with intent",
-    body: "Set savings Goals and write a short Thesis for each position, so future-you remembers exactly why you bought it.",
+    body: "Write a short thesis for each position so future-you remembers exactly why you bought it — the habit that separates investing from gambling.",
     href: "/app/thesis",
     cta: "Write a thesis",
   },
   {
-    icon: HeartPulse,
-    title: "Build durable habits",
-    body: "Log a daily mood check-in, work through bite-size lessons, and earn XP, levels, and streaks as your process improves.",
-    href: "/app/check-in",
-    cta: "Daily check-in",
+    icon: Lightbulb,
+    title: "Get focused coaching",
+    body: "Insights reads your portfolio and flags concentration, diversification, cash, and thesis coverage so you can invest with process.",
+    href: "/app/insights",
+    cta: "See insights",
   },
   {
     icon: Compass,
