@@ -18,7 +18,8 @@ export function getSecurityHeaders(isDev = process.env.NODE_ENV !== "production"
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     `script-src ${scriptSrc}`,
-    "connect-src 'self'",
+    // 'self' for the API proxy; finnhub.io for optional client-side realtime quotes.
+    "connect-src 'self' https://finnhub.io",
     "form-action 'self'",
   ].join("; ");
 

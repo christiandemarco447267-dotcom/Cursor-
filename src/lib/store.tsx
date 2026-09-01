@@ -13,7 +13,7 @@ import { DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./marke
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
 import { LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
-import type { AppState, MarketSnapshot, MarketStatus, Quote } from "./types";
+import { AppStateSchema, type AppState, type MarketSnapshot, type MarketStatus, type Quote } from "./types";
 
 // ---- Realtime market config ----------------------------------------------
 
@@ -120,11 +120,19 @@ function ensureInit() {
   });
 }
 
-/** Apply a mutation. Throws (without persisting) if the mutation rejects the action. */
+/**
+ * Apply a mutation. Throws (without persisting) if the mutation rejects the
+ * action, and validates the result against the schema so a bug can never
+ * persist out-of-range/corrupt state (which would otherwise wipe data on reload).
+ */
 function mutate(fn: (state: AppState) => AppState) {
   if (!current) throw new Error("Store not ready yet.");
   const next = fn(current);
-  setCurrent(next);
+  const parsed = AppStateSchema.safeParse(next);
+  if (!parsed.success) {
+    throw new Error("That action was cancelled because it would exceed allowed limits.");
+  }
+  setCurrent(parsed.data);
 }
 
 // ---- Market -------------------------------------------------------------

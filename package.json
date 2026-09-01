@@ -2,7 +2,7 @@
   "name": "sentia",
   "version": "1.0.0",
   "private": true,
-  "description": "Sentia — a stable, professional paper-trading coach (goals, theses, lessons, mood check-ins) with local-first data.",
+  "description": "Sentia — a focused, professional paper-trading coach (buy/sell simulation, portfolio, theses, insights) with local-first data.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,7 +14,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.25.0",
-    "next": "16.2.10",
+    "next": "16.3.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.3"
@@ -25,7 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5"
