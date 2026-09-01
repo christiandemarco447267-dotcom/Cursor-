@@ -4,31 +4,26 @@
 app for practicing a disciplined investing *process*. Not a brokerage and not investment
 advice.
 
-## What's new in this rebuild
+## A focused investing-practice tool
 
-This version fixes the structural weaknesses of the earlier prototype and adds a real
-simulation instead of a static holdings list:
+Sentia is deliberately streamlined around one loop: **buy and sell, track your book, and
+document your reasoning.** The core screens are Portfolio, Trade, Markets, Allocation,
+Theses, and Insights.
 
 - **Real paper trading** — Buy and sell against a cash balance. Buys merge into a single
   lot with a **weighted-average cost basis**; sells realize P/L and credit cash. Every
   action is written to a transaction ledger (`/app/trade`).
-- **Full CRUD** — Goals can be funded, adjusted, and deleted; theses can be edited and
-  deleted; holdings can be **linked to a thesis** (the link is now used consistently by
-  the health grade and Insights).
-- **Coherent gamification** — One clear engagement streak (local-date based, advanced at
-  most once/day) with a longest-streak record, plus a health grade derived from the same
-  `processSignals` the Insights screen reads, so advice never contradicts the grade.
-- **Stable state** — Versioned schema (`v2`) with an **automatic migration** path from
-  `v1`, cross-tab synchronization via the `storage` event, and a single metadata-commit
-  pass per mutation.
-- **Hardened market layer** — `/api/market` reports true `open`/`closed` status (US
-  Eastern hours), degrades gracefully per-symbol on live-quote failures, and is
-  rate-limited. The proxy sets a strict CSP (no `unsafe-eval` in production) and security
-  headers.
-- **Full navigation parity** — Every screen is reachable from the sidebar and a scrollable
-  mobile bottom bar.
-- **Broader tests** — Unit tests cover trading math, migrations, gamification, quiz
-  scoring, insights, and allocation.
+- **Investment theses** — Write, edit, and delete a thesis for each idea; holdings can be
+  **linked to a thesis**, and Insights uses that link to keep you honest.
+- **Realtime, auto-updating market data** — `/api/market` reports true `open`/`closed`
+  status (US Eastern hours) and a live feed that refreshes automatically; add a Finnhub key
+  for real quotes, or run on the built-in live simulation.
+- **Portfolio-aware insights** — Concise coaching on diversification, concentration, cash,
+  and thesis coverage, derived directly from your holdings.
+- **Stable state** — Versioned, Zod-validated schema with automatic migration, cross-tab
+  synchronization, and a local-first store. A short profile setup + optional onboarding
+  tour help first-time users.
+- **Mobile-friendly** — A clean top bar + slide-in navigation drawer on phones.
 
 ## Try it from GitHub (no local setup)
 
@@ -75,9 +70,8 @@ cp .env.example .env.local
 ## Architecture
 
 - **`src/lib`** — framework-free domain logic: Zod schemas + migration (`types.ts`,
-  `storage.ts`), valuation & trading (`portfolio.ts`), gamification/health
-  (`gamification.ts`), market data (`market.ts`), insights, lessons, quiz, and a
-  `useSyncExternalStore`-based store (`store.tsx`).
+  `storage.ts`), valuation & trading (`portfolio.ts`), market data (`market.ts`),
+  insights, profile helpers, and a `useSyncExternalStore`-based store (`store.tsx`).
 - **`src/app`** — App Router pages (thin) + API routes (`/api/market`, `/api/health`).
 - **`src/components`** — one client view component per screen plus shared UI primitives.
 - **`src/proxy.ts`** — security headers (Next.js 16 `proxy` convention).

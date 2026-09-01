@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { CheckCircle2, HeartPulse, Info, NotebookPen, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, Info, NotebookPen, TriangleAlert } from "lucide-react";
 import { buildInsights, type InsightTone } from "@/lib/insights";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
@@ -27,7 +27,7 @@ export function InsightsView() {
 
   return (
     <div className="stack gap-lg animate-in">
-      <PageHeader title="Insights" subtitle="Rule-based coaching that stays consistent with your health grade." />
+      <PageHeader title="Insights" subtitle="Portfolio-aware coaching to keep your process on track." />
 
       <div className="grid grid-2">
         {insights.map((insight) => (
@@ -47,11 +47,11 @@ export function InsightsView() {
           </span>
           <span className="small muted">Document why you hold each position</span>
         </Link>
-        <Link href="/app/check-in" className="panel row gap-sm between">
+        <Link href="/app/trade" className="panel row gap-sm between">
           <span className="row gap-sm">
-            <HeartPulse size={18} /> <strong>Log a check-in</strong>
+            <ArrowLeftRight size={18} /> <strong>Rebalance</strong>
           </span>
-          <span className="small muted">Notice emotions before acting</span>
+          <span className="small muted">Buy or sell to act on these insights</span>
         </Link>
       </div>
     </div>

@@ -44,15 +44,15 @@ export function Landing() {
             every trade.
           </h1>
           <p className="muted" style={{ fontSize: 18, maxWidth: 620 }}>
-            Sentia is an educational paper-trading coach. Simulate buys and sells, write a thesis for every position,
-            set goals, log your mood, and build durable habits — all with local-first, validated data.
+            Sentia is a focused, educational paper-trading coach. Simulate buys and sells, write a thesis for every
+            position, and get portfolio-aware insights — all with local-first, validated data.
           </p>
           <div className="row wrap gap-md">
             <Link href="/app" className="btn btn-primary">
               Launch the workspace <ArrowRight size={16} />
             </Link>
-            <Link href="/app/learn" className="btn">
-              Explore the lessons
+            <Link href="/app/trade" className="btn">
+              Start trading
             </Link>
           </div>
         </section>

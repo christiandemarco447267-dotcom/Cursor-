@@ -2,24 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Award,
-  Compass,
-  Flame,
-  GraduationCap,
-  HeartPulse,
-  Lightbulb,
-  RefreshCw,
-  Target,
-} from "lucide-react";
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, Lightbulb, LineChart, PieChart, RefreshCw } from "lucide-react";
 import { formatCurrency, formatPercent, formatSignedCurrency } from "@/lib/format";
-import { lessonProgressPercent } from "@/lib/lessons";
 import { realizedPnl } from "@/lib/portfolio";
-import { xpProgress } from "@/lib/gamification";
 import { useApp } from "@/lib/store";
-import { Loading, Panel, ProgressBar } from "./ui";
+import { Loading, Panel } from "./ui";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -50,9 +37,6 @@ export function DashboardHome() {
   const [nameInput, setNameInput] = useState("");
   if (!ready || !state || !summary) return <Loading />;
 
-  const { gamification } = state;
-  const progress = xpProgress(gamification.xp);
-  const lessonPercent = lessonProgressPercent(state.lessons.map((l) => l.lessonId));
   const realized = realizedPnl(state);
   const firstName = state.profileName.split(" ")[0];
 
@@ -66,19 +50,13 @@ export function DashboardHome() {
       <div className="row between wrap gap-md">
         <div className="stack gap-sm">
           <span className="eyebrow">{greeting()}</span>
-          <h1 style={{ fontSize: "2rem" }}>
-            {firstName ? `Welcome back, ${firstName}` : "Your investing workspace"}
-          </h1>
+          <h1 style={{ fontSize: "2rem" }}>{firstName ? `Welcome back, ${firstName}` : "Your investing workspace"}</h1>
         </div>
         <div className="row wrap gap-sm">
-          <span className="pill pill-primary">
-            <Award size={15} /> Level {gamification.level}
-          </span>
-          <span className="pill">{gamification.xp} XP</span>
-          <span className="pill pill-accent">
-            <Flame size={15} /> {gamification.streak}-day streak
-          </span>
-          <span className="pill">Health {gamification.health}</span>
+          <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{marketLabel(market.status)}</span>
+          <button className="btn btn-sm" onClick={refreshMarket}>
+            <RefreshCw size={15} /> Refresh
+          </button>
         </div>
       </div>
 
@@ -107,13 +85,6 @@ export function DashboardHome() {
         </Panel>
       ) : null}
 
-      <div className="row between wrap gap-sm">
-        <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{marketLabel(market.status)}</span>
-        <button className="btn btn-sm" onClick={refreshMarket}>
-          <RefreshCw size={15} /> Refresh
-        </button>
-      </div>
-
       <Panel strong className="panel-pad-lg hero-balance holo stack gap-md">
         <span className="eyebrow">Total portfolio value</span>
         <div className="row between wrap gap-md">
@@ -133,38 +104,40 @@ export function DashboardHome() {
         </Link>
       </Panel>
 
-      <Panel className="stack gap-sm">
-        <div className="row between">
-          <strong>Progress to level {gamification.level + 1}</strong>
-          <span className="small muted">
-            {progress.intoLevel}/{progress.needed} XP
-          </span>
-        </div>
-        <ProgressBar percent={(progress.intoLevel / progress.needed) * 100} />
-        <span className="small muted">Longest streak: {gamification.longestStreak} days</span>
-      </Panel>
-
       <div className="grid grid-2">
-        <QuickLink href="/app/trade" icon={<ArrowUpRight size={18} />} title="Trade" body="Buy or sell against your cash balance." />
-        <QuickLink href="/app/check-in" icon={<HeartPulse size={18} />} title="Daily check-in" body="Log how you feel before you act." />
-        <QuickLink href="/app/quiz" icon={<Compass size={18} />} title="Discover your type" body="A quick, unscored investor-style quiz." />
+        <QuickLink
+          href="/app/trade"
+          icon={<ArrowLeftRight size={18} />}
+          title="Trade"
+          body="Buy or sell against your cash balance."
+        />
+        <QuickLink
+          href="/app/markets"
+          icon={<LineChart size={18} />}
+          title="Markets"
+          body="Live prices for your universe and holdings."
+        />
+        <QuickLink
+          href="/app/allocate"
+          icon={<PieChart size={18} />}
+          title="Allocation"
+          body="See how your capital is distributed."
+        />
         <QuickLink
           href="/app/insights"
           icon={<Lightbulb size={18} />}
           title="Insights"
-          body="Coaching tuned to your current process."
+          body="Coaching tuned to your current portfolio."
         />
       </div>
 
-      <Panel className="stack gap-md">
-        <RowLink href="/app/goals" icon={<Target size={18} />} title="Goals" hint={`${state.goals.length} set`} />
+      <Panel className="stack gap-sm">
         <RowLink
-          href="/app/learn"
-          icon={<GraduationCap size={18} />}
-          title="Learn"
-          hint={`${lessonPercent}% complete`}
+          href="/app/thesis"
+          icon={<Lightbulb size={18} />}
+          title="Investment theses"
+          hint={`${state.theses.length} written`}
         />
-        <RowLink href="/app/thesis" icon={<Lightbulb size={18} />} title="Theses" hint={`${state.theses.length} written`} />
       </Panel>
 
       <p className="disclaimer">

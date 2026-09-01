@@ -1,23 +1,6 @@
-import { localDayKey, nameForSymbol } from "./market";
-import {
-  applyXp,
-  computeHealth,
-  touchStreak,
-  XP_REWARDS,
-} from "./gamification";
-import {
-  computeBuy,
-  computeSell,
-  round2,
-} from "./portfolio";
-import {
-  AppState,
-  AppStateSchema,
-  Goal,
-  SCHEMA_VERSION,
-  Thesis,
-  Transaction,
-} from "./types";
+import { nameForSymbol } from "./market";
+import { computeBuy, computeSell, round2 } from "./portfolio";
+import { AppState, AppStateSchema, SCHEMA_VERSION, Thesis, Transaction } from "./types";
 import { LIMITS } from "./validation";
 
 export const STORAGE_KEY = "sentia.state.v2";
@@ -26,10 +9,6 @@ export const LEGACY_STORAGE_KEYS = ["trellis.state.v2", "ainvestpro.state.v2"];
 
 function nowIso(): string {
   return new Date().toISOString();
-}
-
-function todayKey(): string {
-  return localDayKey(new Date());
 }
 
 function newId(): string {
@@ -99,7 +78,7 @@ export function createInitialState(): AppState {
     };
   });
 
-  const base: AppState = {
+  return {
     version: SCHEMA_VERSION,
     profileName: "",
     onboardedAt: null,
@@ -107,38 +86,16 @@ export function createInitialState(): AppState {
     profile: { experience: null, focus: null, avatarColor: "#0d9488" },
     cash: runningCash,
     holdings,
-    goals: [],
     theses: [],
-    checkIns: [],
-    lessons: [],
     transactions,
-    gamification: {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      longestStreak: 0,
-      lastActiveDate: null,
-      health: "C",
-    },
-    investor: { type: "unspecified", answeredAt: null },
     createdAt: created,
     updatedAt: created,
   };
-  base.gamification.health = computeHealth(base, todayKey());
-  return base;
 }
 
-/**
- * Recompute derived metadata exactly once per mutation: advance the streak (max
- * once/day), award XP if provided, refresh the health grade, and stamp updatedAt.
- */
-function commit(state: AppState, opts: { xp?: number } = {}): AppState {
-  const today = todayKey();
-  let gamification = touchStreak(state.gamification, today);
-  if (opts.xp) gamification = applyXp(gamification, opts.xp);
-  const next: AppState = { ...state, gamification, updatedAt: nowIso() };
-  next.gamification = { ...next.gamification, health: computeHealth(next, today) };
-  return next;
+/** Stamp updatedAt after every mutation. */
+function commit(state: AppState): AppState {
+  return { ...state, updatedAt: nowIso() };
 }
 
 function pushTransaction(transactions: Transaction[], tx: Transaction): Transaction[] {
@@ -163,7 +120,7 @@ export function deposit(state: AppState, amount: number, note = ""): AppState {
     note,
     createdAt: nowIso(),
   };
-  return commit({ ...state, cash, transactions: pushTransaction(state.transactions, tx) }, { xp: XP_REWARDS.deposit });
+  return commit({ ...state, cash, transactions: pushTransaction(state.transactions, tx) });
 }
 
 export function withdraw(state: AppState, amount: number, note = ""): AppState {
@@ -198,10 +155,12 @@ export function buy(state: AppState, input: { symbol: string; shares: number; pr
     note: "",
     createdAt: now,
   };
-  return commit(
-    { ...state, cash: result.cash, holdings: result.holdings, transactions: pushTransaction(state.transactions, tx) },
-    { xp: XP_REWARDS.buy },
-  );
+  return commit({
+    ...state,
+    cash: result.cash,
+    holdings: result.holdings,
+    transactions: pushTransaction(state.transactions, tx),
+  });
 }
 
 export function sell(state: AppState, input: { symbol: string; shares: number; price: number }): AppState {
@@ -219,63 +178,12 @@ export function sell(state: AppState, input: { symbol: string; shares: number; p
     note: "",
     createdAt: now,
   };
-  return commit(
-    { ...state, cash: result.cash, holdings: result.holdings, transactions: pushTransaction(state.transactions, tx) },
-    { xp: XP_REWARDS.sell },
-  );
-}
-
-// ---- Goals ---------------------------------------------------------------
-
-export function addGoal(
-  state: AppState,
-  input: { title: string; targetAmount: number; currentAmount: number; deadline?: string },
-): AppState {
-  const now = nowIso();
-  const goal: Goal = {
-    id: newId(),
-    title: input.title.trim(),
-    targetAmount: input.targetAmount,
-    currentAmount: input.currentAmount,
-    deadline: input.deadline?.trim() || undefined,
-    createdAt: now,
-    updatedAt: now,
-  };
-  return commit({ ...state, goals: [...state.goals, goal] }, { xp: XP_REWARDS.addGoal });
-}
-
-export function updateGoal(
-  state: AppState,
-  id: string,
-  patch: Partial<Pick<Goal, "title" | "targetAmount" | "deadline">>,
-): AppState {
-  const goals = state.goals.map((goal) =>
-    goal.id === id
-      ? {
-          ...goal,
-          ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
-          ...(patch.targetAmount !== undefined ? { targetAmount: patch.targetAmount } : {}),
-          ...(patch.deadline !== undefined ? { deadline: patch.deadline.trim() || undefined } : {}),
-          updatedAt: nowIso(),
-        }
-      : goal,
-  );
-  return commit({ ...state, goals });
-}
-
-export function contributeToGoal(state: AppState, id: string, delta: number): AppState {
-  let touched = false;
-  const goals = state.goals.map((goal) => {
-    if (goal.id !== id) return goal;
-    touched = true;
-    const currentAmount = round2(Math.min(Math.max(0, goal.currentAmount + delta), LIMITS.maxMoney));
-    return { ...goal, currentAmount, updatedAt: nowIso() };
+  return commit({
+    ...state,
+    cash: result.cash,
+    holdings: result.holdings,
+    transactions: pushTransaction(state.transactions, tx),
   });
-  return commit({ ...state, goals }, { xp: touched && delta > 0 ? XP_REWARDS.contributeGoal : 0 });
-}
-
-export function removeGoal(state: AppState, id: string): AppState {
-  return commit({ ...state, goals: state.goals.filter((g) => g.id !== id) });
 }
 
 // ---- Theses --------------------------------------------------------------
@@ -299,7 +207,7 @@ export function addThesis(
   const holdings = state.holdings.map((h) =>
     h.symbol.toUpperCase() === thesis.symbol && !h.thesisId ? { ...h, thesisId: thesis.id, updatedAt: now } : h,
   );
-  return commit({ ...state, theses: [...state.theses, thesis], holdings }, { xp: XP_REWARDS.addThesis });
+  return commit({ ...state, theses: [...state.theses, thesis], holdings });
 }
 
 export function updateThesis(
@@ -332,30 +240,6 @@ export function linkHoldingToThesis(state: AppState, holdingId: string, thesisId
     h.id === holdingId ? { ...h, thesisId: thesisId || undefined, updatedAt: nowIso() } : h,
   );
   return commit({ ...state, holdings });
-}
-
-// ---- Check-ins -----------------------------------------------------------
-
-export function addCheckIn(state: AppState, input: { mood: (typeof state.checkIns)[number]["mood"]; note?: string }): AppState {
-  const now = nowIso();
-  const today = todayKey();
-  const alreadyToday = state.checkIns.some((c) => localDayKey(new Date(c.createdAt)) === today);
-  const checkIn = {
-    id: newId(),
-    mood: input.mood,
-    note: (input.note ?? "").trim(),
-    createdAt: now,
-  };
-  const checkIns = [checkIn, ...state.checkIns].slice(0, LIMITS.maxCheckIns);
-  return commit({ ...state, checkIns }, { xp: alreadyToday ? 0 : XP_REWARDS.checkIn });
-}
-
-// ---- Lessons -------------------------------------------------------------
-
-export function completeLesson(state: AppState, lessonId: string): AppState {
-  if (state.lessons.some((l) => l.lessonId === lessonId)) return state;
-  const lessons = [...state.lessons, { lessonId, completedAt: nowIso() }];
-  return commit({ ...state, lessons }, { xp: XP_REWARDS.completeLesson });
 }
 
 // ---- Profile -------------------------------------------------------------
@@ -391,14 +275,6 @@ export function saveProfile(state: AppState, input: ProfileInput): AppState {
   });
 }
 
-// ---- Investor profile ----------------------------------------------------
-
-export function setInvestorType(state: AppState, type: Exclude<AppState["investor"]["type"], "unspecified">): AppState {
-  const firstTime = state.investor.type === "unspecified";
-  const investor = { type, answeredAt: nowIso() };
-  return commit({ ...state, investor }, { xp: firstTime ? XP_REWARDS.completeQuiz : 0 });
-}
-
 // ---- Persistence ---------------------------------------------------------
 
 export function serializeState(state: AppState): string {
@@ -427,10 +303,9 @@ export function migrateUnknown(raw: unknown): AppState | null {
 function migrateV1(v1: Record<string, unknown>): unknown {
   const nowFallback = nowIso();
   const holdings = Array.isArray(v1.holdings) ? v1.holdings : [];
-  const goals = Array.isArray(v1.goals) ? v1.goals : [];
   const theses = Array.isArray(v1.theses) ? v1.theses : [];
-  const gamification = (v1.gamification ?? {}) as Record<string, unknown>;
 
+  // Fields no longer in the schema (goals, gamification, etc.) are stripped on parse.
   return {
     ...v1,
     version: SCHEMA_VERSION,
@@ -439,15 +314,10 @@ function migrateV1(v1: Record<string, unknown>): unknown {
       const holding = h as Record<string, unknown>;
       return { ...holding, updatedAt: holding.updatedAt ?? holding.createdAt ?? nowFallback };
     }),
-    goals: goals.map((g) => {
-      const goal = g as Record<string, unknown>;
-      return { ...goal, updatedAt: goal.updatedAt ?? goal.createdAt ?? nowFallback };
-    }),
     theses: theses.map((t) => {
       const thesis = t as Record<string, unknown>;
       return { ...thesis, conviction: thesis.conviction ?? 3 };
     }),
-    gamification: { ...gamification, longestStreak: gamification.longestStreak ?? gamification.streak ?? 0 },
   };
 }
 
