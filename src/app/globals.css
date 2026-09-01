@@ -8,27 +8,29 @@
 :root {
   /* Sleek dark "Slate" theme: slate-gray base, royal-blue primary,
      emerald for gains, ruby for losses. */
-  --bg: #0e1526;
-  --bg-soft: #131c30;
-  --panel: rgba(148, 163, 184, 0.06);
-  --panel-strong: rgba(148, 163, 184, 0.1);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(148, 163, 184, 0.28);
-  --text: #e9edf6;
-  --text-muted: #9aa7bd;
-  --text-dim: #6b7890;
-  --primary: #4169e1;
-  --primary-strong: #2f4fd0;
-  --primary-soft: rgba(65, 105, 225, 0.18);
-  --accent: #10b981;
-  --accent-strong: #059669;
-  --gain: #10b981;
-  --loss: #f43f5e;
+  --bg: #101a33;
+  --bg-soft: #18233f;
+  --panel: rgba(159, 176, 208, 0.09);
+  --panel-strong: rgba(159, 176, 208, 0.14);
+  --border: rgba(159, 176, 208, 0.2);
+  --border-strong: rgba(159, 176, 208, 0.34);
+  --text: #f3f6fc;
+  --text-muted: #aab7cf;
+  --text-dim: #7f8ea9;
+  --primary: #4f7cff;
+  --primary-strong: #3a63ec;
+  --primary-soft: rgba(79, 124, 255, 0.2);
+  --accent: #34d399;
+  --accent-strong: #10b981;
+  --gain: #34d399;
+  --loss: #fb7185;
   --radius: 16px;
   --radius-lg: 22px;
-  --shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.7);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 30px -22px rgba(0, 0, 0, 0.65);
-  --glow-primary: 0 12px 28px -12px rgba(65, 105, 225, 0.5);
+  --shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.55);
+  /* Includes a subtle top-edge highlight so cards read as polished/elevated. */
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.28),
+    0 16px 34px -22px rgba(0, 0, 0, 0.55);
+  --glow-primary: 0 14px 34px -12px rgba(79, 124, 255, 0.6);
 }
 
 * {
@@ -54,8 +56,8 @@ body {
   font-family: var(--font-sans);
   color: var(--text);
   background:
-    radial-gradient(1200px 820px at 88% -18%, rgba(65, 105, 225, 0.18), transparent 62%),
-    radial-gradient(1000px 720px at -5% -5%, rgba(16, 185, 129, 0.08), transparent 58%),
+    radial-gradient(1200px 820px at 88% -18%, rgba(79, 124, 255, 0.24), transparent 62%),
+    radial-gradient(1000px 720px at -5% -5%, rgba(52, 211, 153, 0.1), transparent 58%),
     var(--bg);
   background-attachment: fixed;
   min-height: 100vh;
@@ -155,7 +157,7 @@ button {
   isolation: isolate;
   border-color: transparent;
   background:
-    linear-gradient(180deg, rgba(65, 105, 225, 0.09), rgba(16, 185, 129, 0.04)),
+    linear-gradient(180deg, rgba(79, 124, 255, 0.09), rgba(16, 185, 129, 0.04)),
     var(--panel-strong);
   box-shadow: var(--card-shadow);
   overflow: hidden;
@@ -192,7 +194,7 @@ button {
   z-index: 1;
 }
 .holo:hover {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(65, 105, 225, 0.4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(79, 124, 255, 0.4);
 }
 @keyframes holo-shift {
   0% {
@@ -219,10 +221,10 @@ button {
 
 .hero-balance {
   background:
-    radial-gradient(680px 240px at 100% -10%, rgba(65, 105, 225, 0.24), transparent 72%),
-    linear-gradient(180deg, rgba(65, 105, 225, 0.1), rgba(16, 185, 129, 0.04)),
+    radial-gradient(680px 240px at 100% -10%, rgba(79, 124, 255, 0.24), transparent 72%),
+    linear-gradient(180deg, rgba(79, 124, 255, 0.1), rgba(16, 185, 129, 0.04)),
     var(--panel-strong);
-  border-color: rgba(65, 105, 225, 0.3);
+  border-color: rgba(79, 124, 255, 0.3);
   box-shadow: var(--card-shadow);
 }
 .text-gradient {
@@ -289,8 +291,8 @@ button {
 }
 .pill-primary {
   background: var(--primary-soft);
-  border-color: rgba(65, 105, 225, 0.34);
-  color: #9db4ff;
+  border-color: rgba(79, 124, 255, 0.34);
+  color: #b0c8ff;
 }
 .badge {
   display: inline-flex;
@@ -337,10 +339,10 @@ button {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(180deg, #5a7dff, var(--primary-strong));
+  background: linear-gradient(180deg, #6d92ff, var(--primary-strong));
   border-color: transparent;
   color: #ffffff;
-  box-shadow: var(--glow-primary);
+  box-shadow: var(--glow-primary), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 .btn-primary:hover {
   border-color: transparent;
@@ -391,7 +393,7 @@ button {
 .select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.3);
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.3);
 }
 .input::placeholder,
 .textarea::placeholder {
@@ -449,8 +451,8 @@ button {
   place-items: center;
   font-weight: 700;
   font-size: 13px;
-  background: rgba(65, 105, 225, 0.18);
-  color: #9db4ff;
+  background: rgba(79, 124, 255, 0.18);
+  color: #b0c8ff;
   flex-shrink: 0;
 }
 
@@ -506,7 +508,7 @@ button {
   height: 36px;
   border-radius: 10px;
   object-fit: cover;
-  box-shadow: 0 6px 18px -6px rgba(65, 105, 225, 0.6);
+  box-shadow: 0 6px 18px -6px rgba(79, 124, 255, 0.6);
 }
 .nav-link {
   display: flex;
@@ -622,8 +624,8 @@ button {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(65, 105, 225, 0.16);
-  color: #9db4ff;
+  background: rgba(79, 124, 255, 0.16);
+  color: #b0c8ff;
 }
 
 /* ---------- Mood chips ---------- */
@@ -649,7 +651,7 @@ button {
 }
 .mood-chip.selected {
   border-color: var(--primary);
-  background: rgba(65, 105, 225, 0.16);
+  background: rgba(79, 124, 255, 0.16);
   color: var(--text);
 }
 .mood-emoji {
