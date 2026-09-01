@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Dancing_Script, DM_Sans, Fraunces } from "next/font/google";
+import { assetPath } from "@/lib/asset";
 import "./globals.css";
 
 const dancingScript = Dancing_Script({
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
   description:
     "A focused paper-trading coach: real buy/sell simulation, portfolio and allocation tracking, investment theses, and portfolio-aware insights — with local-first, validated data.",
   applicationName: "Sentia",
-  icons: { icon: "/icon.png", apple: "/icon.png" },
+  icons: { icon: assetPath("/icon.png"), apple: assetPath("/icon.png") },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
