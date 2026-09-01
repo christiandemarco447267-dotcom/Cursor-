@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { demoQuote, localDayKey, marketStatusNow, uniqueSymbols } from "@/lib/market";
+import { demoQuote, marketStatusNow, uniqueSymbols } from "@/lib/market";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import type { MarketSnapshot, Quote } from "@/lib/types";
 
@@ -14,10 +14,10 @@ const SymbolsSchema = z
 
 const DEFAULT_SYMBOLS = ["VTI", "VOO", "VXUS", "BND", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "SCHD"];
 
-async function fetchFinnhubQuote(symbol: string, apiKey: string, dayKey: string): Promise<Quote> {
+async function fetchFinnhubQuote(symbol: string, apiKey: string): Promise<Quote> {
   try {
     const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000), cache: "no-store" });
     if (!res.ok) throw new Error(`Finnhub responded ${res.status}`);
     const data = (await res.json()) as { c?: number; pc?: number };
     if (!data.c || !data.pc) throw new Error("Missing price data");
@@ -30,8 +30,8 @@ async function fetchFinnhubQuote(symbol: string, apiKey: string, dayKey: string)
       source: "live",
     };
   } catch (error) {
-    // Fall back to a demo quote for this symbol so a partial outage never blanks the UI.
-    return { ...demoQuote(symbol, dayKey), error: error instanceof Error ? error.message : "quote failed" };
+    // Fall back to a live-simulated quote so a partial outage never blanks the UI.
+    return { ...demoQuote(symbol), error: error instanceof Error ? error.message : "quote failed" };
   }
 }
 
@@ -51,28 +51,29 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const requested = uniqueSymbols(parsed.data.length ? parsed.data : DEFAULT_SYMBOLS).slice(0, 20);
-  const dayKey = localDayKey(new Date());
   const apiKey = process.env.FINNHUB_API_KEY;
+  const now = Date.now();
 
   let snapshot: MarketSnapshot;
   if (apiKey) {
-    const quotes = await Promise.all(requested.map((symbol) => fetchFinnhubQuote(symbol, apiKey, dayKey)));
+    const quotes = await Promise.all(requested.map((symbol) => fetchFinnhubQuote(symbol, apiKey)));
     const anyLive = quotes.some((q) => q.source === "live");
     snapshot = {
       status: anyLive ? marketStatusNow() : "demo",
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(now).toISOString(),
       quotes,
     };
   } else {
     snapshot = {
       status: "demo",
-      updatedAt: new Date().toISOString(),
-      quotes: requested.map((symbol) => demoQuote(symbol, dayKey)),
+      updatedAt: new Date(now).toISOString(),
+      quotes: requested.map((symbol) => demoQuote(symbol, now)),
     };
   }
 
   return NextResponse.json(snapshot, {
-    headers: { "Cache-Control": "private, max-age=30" },
+    // Realtime: don't cache so each poll reflects the latest prices.
+    headers: { "Cache-Control": "no-store" },
   });
 }
 
