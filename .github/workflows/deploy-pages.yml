@@ -55,6 +55,11 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           PAGES_BASE_PATH: "/${{ github.event.repository.name }}"
+          # Tells the client it's a static build (skip the non-existent /api route).
+          NEXT_PUBLIC_STATIC_EXPORT: "true"
+          # Optional: add a FINNHUB_API_KEY repo secret to enable real realtime quotes.
+          # Safe to be public (it ships to the browser); leave unset to use the live demo feed.
+          NEXT_PUBLIC_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: npm run build
 
       - name: Add .nojekyll

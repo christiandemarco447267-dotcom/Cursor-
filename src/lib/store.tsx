@@ -9,11 +9,53 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { DEMO_UNIVERSE, demoSnapshot } from "./market";
+import { DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./market";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
 import { LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
 import type { AppState, MarketSnapshot, MarketStatus, Quote } from "./types";
+
+// ---- Realtime market config ----------------------------------------------
+
+// How often quotes auto-refresh (ms). Kept snappy so changes reflect promptly.
+const MARKET_REFRESH_MS = 15_000;
+// Optional public key for browser-side realtime quotes (works on static hosting).
+const CLIENT_FINNHUB_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+// Set on the static export build so we skip the (non-existent) /api route.
+const IS_STATIC_EXPORT = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/** Fetch realtime quotes directly from Finnhub in the browser (per-symbol graceful fallback). */
+async function fetchClientQuotes(symbols: string[], key: string): Promise<MarketState> {
+  const list = symbols.length ? symbols : DEMO_UNIVERSE.map((e) => e.symbol);
+  const quotes: Quote[] = await Promise.all(
+    list.map(async (symbol) => {
+      try {
+        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${key}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as { c?: number; pc?: number };
+        if (!data.c || !data.pc) throw new Error("no data");
+        const changePercent = ((data.c - data.pc) / data.pc) * 100;
+        return {
+          symbol,
+          price: round2(data.c),
+          previousClose: round2(data.pc),
+          changePercent: round2(changePercent),
+          source: "live" as const,
+        };
+      } catch {
+        return demoQuote(symbol);
+      }
+    }),
+  );
+  const anyLive = quotes.some((q) => q.source === "live");
+  return { status: anyLive ? marketStatusNow() : "demo", quotes, updatedAt: new Date().toISOString() };
+}
 
 // ---- Module store (single source of truth, survives re-renders) ----------
 
@@ -163,6 +205,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // setState lives inside the promise callbacks (not synchronously in an effect),
   // which is the pattern React recommends for syncing with an external system.
   const refreshMarket = useCallback(() => {
+    const symbols = symbolsKey ? symbolsKey.split(",") : [];
+    const simulate = () => {
+      const snapshot = demoSnapshot(symbols);
+      setMarket({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
+    };
+
+    // Realtime path: a public market-data key lets the client fetch live quotes
+    // directly (works even on static hosting). Falls back to the simulated feed.
+    if (CLIENT_FINNHUB_KEY) {
+      fetchClientQuotes(symbols, CLIENT_FINNHUB_KEY)
+        .then((snapshot) => setMarket(snapshot))
+        .catch(simulate);
+      return;
+    }
+
+    // Static export has no /api route — skip the request and simulate directly.
+    if (IS_STATIC_EXPORT) {
+      simulate();
+      return;
+    }
+
     fetch(`/api/market?symbols=${encodeURIComponent(symbolsKey)}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(`Market request failed (${res.status})`);
@@ -171,18 +234,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .then((snapshot) => {
         setMarket({ status: snapshot.status, quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
       })
-      .catch(() => {
-        // No backend available (e.g. static hosting) — fall back to client-side demo
-        // quotes so the app stays fully functional instead of showing an error state.
-        const snapshot = demoSnapshot(symbolsKey ? symbolsKey.split(",") : []);
-        setMarket({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
-      });
+      .catch(simulate);
   }, [symbolsKey]);
 
   useEffect(() => {
     if (!state) return;
     refreshMarket();
-    const id = setInterval(refreshMarket, 60_000);
+    const id = setInterval(refreshMarket, MARKET_REFRESH_MS);
     return () => clearInterval(id);
   }, [state, refreshMarket]);
 

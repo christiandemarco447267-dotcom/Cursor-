@@ -29,7 +29,7 @@ export function MarketsView() {
         ? "Live · market closed"
         : market.status === "error"
           ? "Market unavailable — showing last data"
-          : "Demo prices (no API key configured)";
+          : "Live demo prices · auto-updating every 15s";
 
   return (
     <div className="stack gap-lg animate-in">

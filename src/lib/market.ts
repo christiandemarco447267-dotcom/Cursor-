@@ -51,29 +51,46 @@ function baseForSymbol(symbol: string): number {
   return 40 + (hashSeed(symbol) % 400);
 }
 
-export function demoQuote(symbol: string, dayKey: string): Quote {
+// How often the simulated price advances to a new value (ms).
+export const SIM_TICK_MS = 12_000;
+
+/**
+ * A time-varying "live" quote used when no real market provider is configured.
+ * The price evolves continuously (a slow intraday wave plus per-tick jitter) so
+ * the UI reflects changes automatically on each refresh. Movement is dampened
+ * when the US market is closed, while the day's `previousClose` stays stable.
+ */
+export function demoQuote(symbol: string, now: number = Date.now()): Quote {
   const normalized = normalizeSymbol(symbol);
   const base = baseForSymbol(normalized);
-  const rand = mulberry32(hashSeed(`${normalized}:${dayKey}`));
-  const changePercent = (rand() - 0.5) * 4; // roughly -2%..+2%
+  const open = marketStatusNow(new Date(now)) === "open";
+
+  // Slow drift over ~90 minutes, offset per symbol so tickers don't move in lockstep.
+  const phase = hashSeed(normalized) % 360;
+  const slow = Math.sin(now / 5_400_000 + phase) * 0.9;
+
+  // Fresh jitter every SIM_TICK_MS so prices visibly update between refreshes.
+  const tick = Math.floor(now / SIM_TICK_MS);
+  const jitter = (mulberry32(hashSeed(`${normalized}:${tick}`))() - 0.5) * (open ? 1.6 : 0.5);
+
+  const changePercent = round2(slow + jitter);
   const previousClose = round2(base);
   const price = round2(previousClose * (1 + changePercent / 100));
   return {
     symbol: normalized,
     price,
     previousClose,
-    changePercent: round2(changePercent),
+    changePercent,
     source: "demo",
   };
 }
 
-export function demoSnapshot(symbols: string[]): MarketSnapshot {
-  const dayKey = localDayKey(new Date());
+export function demoSnapshot(symbols: string[], now: number = Date.now()): MarketSnapshot {
   const unique = uniqueSymbols(symbols);
   return {
     status: "demo",
-    updatedAt: new Date().toISOString(),
-    quotes: unique.map((symbol) => demoQuote(symbol, dayKey)),
+    updatedAt: new Date(now).toISOString(),
+    quotes: unique.map((symbol) => demoQuote(symbol, now)),
   };
 }
 
