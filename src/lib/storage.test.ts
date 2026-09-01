@@ -37,6 +37,12 @@ test("deposit and withdraw adjust cash and guard funds", () => {
   assert.throws(() => withdraw(start, start.cash + 1), /Not enough cash/);
 });
 
+test("deposit rejects amounts that would exceed the max balance (no state corruption)", () => {
+  const start = createInitialState();
+  assert.throws(() => deposit(start, 5_000_000_000), /maximum balance/);
+  assert.throws(() => deposit(start, -1), /positive/);
+});
+
 test("sell realizes P/L into the transaction ledger", () => {
   const bought = buy(createInitialState(), { symbol: "NVDA", shares: 4, price: 100 });
   const sold = sell(bought, { symbol: "NVDA", shares: 4, price: 150 });

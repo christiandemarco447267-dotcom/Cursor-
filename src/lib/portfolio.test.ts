@@ -63,6 +63,14 @@ test("computeBuy rejects when cash is insufficient", () => {
   assert.throws(() => computeBuy(state, { symbol: "AAPL", shares: 1, price: 100 }, now, id), TradeError);
 });
 
+test("computeBuy rejects invalid shares/price", () => {
+  const state = emptyState(10_000);
+  assert.throws(() => computeBuy(state, { symbol: "AAPL", shares: 0, price: 100 }, now, id), TradeError);
+  assert.throws(() => computeBuy(state, { symbol: "AAPL", shares: -5, price: 100 }, now, id), TradeError);
+  assert.throws(() => computeBuy(state, { symbol: "AAPL", shares: NaN, price: 100 }, now, id), TradeError);
+  assert.throws(() => computeBuy(state, { symbol: "AAPL", shares: 1, price: -1 }, now, id), TradeError);
+});
+
 test("computeSell realizes P/L, credits cash, and removes an emptied lot", () => {
   let state = emptyState(0);
   state = { ...state, holdings: computeBuy(emptyState(2000), { symbol: "MSFT", shares: 10, price: 100 }, now, id).holdings, cash: 1000 };
@@ -76,6 +84,12 @@ test("computeSell realizes P/L, credits cash, and removes an emptied lot", () =>
 test("computeSell rejects selling more than held", () => {
   const state = { ...emptyState(0), holdings: computeBuy(emptyState(2000), { symbol: "MSFT", shares: 5, price: 100 }, now, id).holdings };
   assert.throws(() => computeSell(state, { symbol: "MSFT", shares: 10, price: 100 }, now), TradeError);
+});
+
+test("computeSell rejects invalid shares", () => {
+  const state = { ...emptyState(0), holdings: computeBuy(emptyState(2000), { symbol: "MSFT", shares: 5, price: 100 }, now, id).holdings };
+  assert.throws(() => computeSell(state, { symbol: "MSFT", shares: 0, price: 100 }, now), TradeError);
+  assert.throws(() => computeSell(state, { symbol: "MSFT", shares: -1, price: 100 }, now), TradeError);
 });
 
 test("allocationSlices includes cash and sums to ~100%", () => {

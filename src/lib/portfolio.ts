@@ -1,6 +1,6 @@
 import { nameForSymbol } from "./market";
 import type { AppState, Holding, Quote } from "./types";
-import { normalizeSymbol } from "./validation";
+import { LIMITS, normalizeSymbol } from "./validation";
 
 export type HoldingValue = {
   id: string;
@@ -119,6 +119,12 @@ export function computeBuy(
   newId: () => string,
 ): TradeResult {
   const symbol = normalizeSymbol(input.symbol);
+  if (!Number.isFinite(input.shares) || input.shares <= 0) {
+    throw new TradeError("Enter a positive number of shares.");
+  }
+  if (!Number.isFinite(input.price) || input.price < 0 || input.price > LIMITS.maxPrice) {
+    throw new TradeError("Enter a valid price per share.");
+  }
   const cost = round2(input.shares * input.price);
   if (cost > state.cash + 1e-9) {
     throw new TradeError(`Not enough cash. This buy costs ${cost.toFixed(2)} but only ${state.cash.toFixed(2)} is available.`);
@@ -129,6 +135,9 @@ export function computeBuy(
   if (index >= 0) {
     const existing = holdings[index];
     const totalShares = existing.shares + input.shares;
+    if (totalShares > LIMITS.maxShares) {
+      throw new TradeError("That would exceed the maximum position size.");
+    }
     const avgCost = round2((existing.shares * existing.avgCost + input.shares * input.price) / totalShares);
     holdings[index] = { ...existing, shares: totalShares, avgCost, updatedAt: now };
   } else {
@@ -153,6 +162,12 @@ export function computeSell(
   now: string,
 ): TradeResult {
   const symbol = normalizeSymbol(input.symbol);
+  if (!Number.isFinite(input.shares) || input.shares <= 0) {
+    throw new TradeError("Enter a positive number of shares.");
+  }
+  if (!Number.isFinite(input.price) || input.price < 0 || input.price > LIMITS.maxPrice) {
+    throw new TradeError("Enter a valid price per share.");
+  }
   const holdings = [...state.holdings];
   const index = holdings.findIndex((h) => normalizeSymbol(h.symbol) === symbol);
   if (index < 0) {

@@ -110,8 +110,9 @@ function pushTransaction(transactions: Transaction[], tx: Transaction): Transact
 
 export function deposit(state: AppState, amount: number, note = ""): AppState {
   const value = round2(amount);
-  if (value <= 0) throw new Error("Deposit must be a positive amount.");
+  if (!Number.isFinite(value) || value <= 0) throw new Error("Deposit must be a positive amount.");
   const cash = round2(state.cash + value);
+  if (cash > LIMITS.maxMoney) throw new Error("That deposit would exceed the maximum balance.");
   const tx: Transaction = {
     id: newId(),
     type: "deposit",
