@@ -8,29 +8,31 @@
 :root {
   /* Sleek dark "Slate" theme: slate-gray base, royal-blue primary,
      emerald for gains, ruby for losses. */
-  --bg: #101a33;
-  --bg-soft: #18233f;
-  --panel: rgba(159, 176, 208, 0.09);
-  --panel-strong: rgba(159, 176, 208, 0.14);
-  --border: rgba(159, 176, 208, 0.2);
-  --border-strong: rgba(159, 176, 208, 0.34);
-  --text: #f3f6fc;
-  --text-muted: #aab7cf;
-  --text-dim: #7f8ea9;
-  --primary: #4f7cff;
-  --primary-strong: #3a63ec;
-  --primary-soft: rgba(79, 124, 255, 0.2);
-  --accent: #34d399;
-  --accent-strong: #10b981;
-  --gain: #34d399;
-  --loss: #fb7185;
+  /* Light "Seafoam" theme: airy seafoam base, teal-blue primary,
+     soft violet accent, emerald gains, rose losses. */
+  --bg: #eef7f4;
+  --bg-soft: #ffffff;
+  --panel: rgba(255, 255, 255, 0.86);
+  --panel-strong: rgba(255, 255, 255, 0.96);
+  --border: rgba(15, 60, 55, 0.1);
+  --border-strong: rgba(15, 60, 55, 0.17);
+  --text: #0f2e28;
+  --text-muted: #4d6862;
+  --text-dim: #7f938c;
+  --primary: #0d9488;
+  --primary-strong: #0f766e;
+  --primary-soft: rgba(13, 148, 136, 0.12);
+  --accent: #8b5cf6;
+  --accent-strong: #7c3aed;
+  --gain: #059669;
+  --loss: #e11d48;
   --radius: 16px;
   --radius-lg: 22px;
-  --shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.55);
-  /* Includes a subtle top-edge highlight so cards read as polished/elevated. */
-  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.28),
-    0 16px 34px -22px rgba(0, 0, 0, 0.55);
-  --glow-primary: 0 14px 34px -12px rgba(79, 124, 255, 0.6);
+  --shadow: 0 20px 40px -24px rgba(15, 60, 55, 0.2);
+  /* Subtle light top-edge highlight so cards read as polished/elevated. */
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 1px 2px rgba(15, 60, 55, 0.05),
+    0 14px 30px -22px rgba(15, 60, 55, 0.18);
+  --glow-primary: 0 12px 28px -12px rgba(13, 148, 136, 0.35);
 }
 
 * {
@@ -56,8 +58,8 @@ body {
   font-family: var(--font-sans);
   color: var(--text);
   background:
-    radial-gradient(1200px 820px at 88% -18%, rgba(79, 124, 255, 0.24), transparent 62%),
-    radial-gradient(1000px 720px at -5% -5%, rgba(52, 211, 153, 0.1), transparent 58%),
+    radial-gradient(1200px 820px at 88% -18%, rgba(45, 212, 191, 0.32), transparent 62%),
+    radial-gradient(1000px 720px at -6% -6%, rgba(139, 92, 246, 0.14), transparent 58%),
     var(--bg);
   background-attachment: fixed;
   min-height: 100vh;
@@ -157,7 +159,7 @@ button {
   isolation: isolate;
   border-color: transparent;
   background:
-    linear-gradient(180deg, rgba(79, 124, 255, 0.09), rgba(16, 185, 129, 0.04)),
+    linear-gradient(180deg, rgba(13, 148, 136, 0.09), rgba(139, 92, 246, 0.04)),
     var(--panel-strong);
   box-shadow: var(--card-shadow);
   overflow: hidden;
@@ -194,7 +196,7 @@ button {
   z-index: 1;
 }
 .holo:hover {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(79, 124, 255, 0.4);
+  box-shadow: 0 1px 2px rgba(15, 60, 55, 0.06), 0 20px 40px -20px rgba(13, 148, 136, 0.4);
 }
 @keyframes holo-shift {
   0% {
@@ -221,10 +223,10 @@ button {
 
 .hero-balance {
   background:
-    radial-gradient(680px 240px at 100% -10%, rgba(79, 124, 255, 0.24), transparent 72%),
-    linear-gradient(180deg, rgba(79, 124, 255, 0.1), rgba(16, 185, 129, 0.04)),
+    radial-gradient(680px 240px at 100% -10%, rgba(13, 148, 136, 0.24), transparent 72%),
+    linear-gradient(180deg, rgba(13, 148, 136, 0.1), rgba(139, 92, 246, 0.04)),
     var(--panel-strong);
-  border-color: rgba(79, 124, 255, 0.3);
+  border-color: rgba(13, 148, 136, 0.3);
   box-shadow: var(--card-shadow);
 }
 .text-gradient {
@@ -285,14 +287,14 @@ button {
   font-weight: 500;
 }
 .pill-accent {
-  background: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #34d399;
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: var(--accent-strong);
 }
 .pill-primary {
   background: var(--primary-soft);
-  border-color: rgba(79, 124, 255, 0.34);
-  color: #b0c8ff;
+  border-color: rgba(13, 148, 136, 0.3);
+  color: var(--primary-strong);
 }
 .badge {
   display: inline-flex;
@@ -304,12 +306,12 @@ button {
   font-weight: 600;
 }
 .badge-gain {
-  background: rgba(16, 185, 129, 0.16);
-  color: #34d399;
+  background: rgba(5, 150, 105, 0.13);
+  color: var(--gain);
 }
 .badge-loss {
-  background: rgba(244, 63, 94, 0.16);
-  color: #fb7185;
+  background: rgba(225, 29, 72, 0.11);
+  color: var(--loss);
 }
 
 /* ---------- Buttons ---------- */
@@ -339,7 +341,7 @@ button {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(180deg, #6d92ff, var(--primary-strong));
+  background: linear-gradient(180deg, #14b8a6, var(--primary-strong));
   border-color: transparent;
   color: #ffffff;
   box-shadow: var(--glow-primary), inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -349,7 +351,7 @@ button {
   filter: brightness(1.06);
 }
 .btn-danger {
-  border-color: rgba(244, 63, 94, 0.45);
+  border-color: rgba(225, 29, 72, 0.4);
   color: var(--loss);
 }
 .btn-sm {
@@ -383,7 +385,7 @@ button {
   padding: 11px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(2, 6, 23, 0.4);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
@@ -393,11 +395,11 @@ button {
 .select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.3);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3);
 }
 .input::placeholder,
 .textarea::placeholder {
-  color: #7f8ca6;
+  color: #64786f;
   opacity: 1;
 }
 .textarea {
@@ -418,7 +420,7 @@ button {
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.16);
+  background: rgba(13, 148, 136, 0.14);
   overflow: hidden;
 }
 .progress > span {
@@ -451,8 +453,8 @@ button {
   place-items: center;
   font-weight: 700;
   font-size: 13px;
-  background: rgba(79, 124, 255, 0.18);
-  color: #b0c8ff;
+  background: rgba(13, 148, 136, 0.18);
+  color: #0f766e;
   flex-shrink: 0;
 }
 
@@ -491,7 +493,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: rgba(11, 18, 32, 0.5);
+  background: rgba(255, 255, 255, 0.55);
 }
 .brand {
   display: flex;
@@ -508,7 +510,7 @@ button {
   height: 36px;
   border-radius: 10px;
   object-fit: cover;
-  box-shadow: 0 6px 18px -6px rgba(79, 124, 255, 0.6);
+  box-shadow: 0 6px 18px -6px rgba(13, 148, 136, 0.6);
 }
 .nav-link {
   display: flex;
@@ -555,7 +557,7 @@ button {
   position: fixed;
   inset: 0;
   z-index: 55;
-  background: rgba(2, 6, 23, 0.6);
+  background: rgba(15, 42, 36, 0.4);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   opacity: 0;
@@ -577,7 +579,7 @@ button {
   transition: transform 0.25s ease;
   background: var(--bg-soft);
   border-right: 1px solid var(--border);
-  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 60px -20px rgba(15, 60, 55, 0.2);
   padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
@@ -624,8 +626,8 @@ button {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(79, 124, 255, 0.16);
-  color: #b0c8ff;
+  background: rgba(13, 148, 136, 0.16);
+  color: #0f766e;
 }
 
 /* ---------- Mood chips ---------- */
@@ -651,7 +653,7 @@ button {
 }
 .mood-chip.selected {
   border-color: var(--primary);
-  background: rgba(79, 124, 255, 0.16);
+  background: rgba(13, 148, 136, 0.16);
   color: var(--text);
 }
 .mood-emoji {
@@ -690,7 +692,7 @@ button {
   padding: 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: rgba(2, 6, 23, 0.6);
+  background: rgba(15, 42, 36, 0.4);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   animation: fade-in 0.2s ease both;
@@ -704,7 +706,7 @@ button {
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 40px 80px -32px rgba(15, 60, 55, 0.3);
   padding: 26px;
   animation: fade-up 0.3s ease both;
 }
@@ -727,7 +729,7 @@ button {
   font-weight: 700;
   font-size: 13px;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px -6px rgba(15, 60, 55, 0.4);
 }
 .avatar-lg {
   width: 56px;
@@ -871,7 +873,7 @@ button {
     z-index: 45;
     height: calc(56px + env(safe-area-inset-top));
     padding: env(safe-area-inset-top) 14px 0;
-    background: rgba(15, 21, 38, 0.88);
+    background: rgba(255, 255, 255, 0.9);
     border-bottom: 1px solid var(--border);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
