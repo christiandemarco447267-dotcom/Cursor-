@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
+import { nameForSymbol } from "@/lib/market";
+import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { isValidSymbol, normalizeSymbol } from "@/lib/validation";
 import { EmptyState, Loading, Panel, PageHeader } from "./ui";
 
 export function ThesisView() {
-  const { ready, state, actions } = useApp();
+  const { ready, state, quotes, actions } = useApp();
+  const prices = useMemo(() => quoteMap(quotes), [quotes]);
   const [symbol, setSymbol] = useState("");
   const [title, setTitle] = useState("");
   const [rationale, setRationale] = useState("");
@@ -42,7 +45,10 @@ export function ThesisView() {
       ) : (
         <div className="stack gap-md">
           {state.theses.map((thesis) => {
+            const symbol = normalizeSymbol(thesis.symbol);
             const linked = state.holdings.some((h) => h.thesisId === thesis.id);
+            const quote = prices.get(symbol);
+            const change = quote?.changePercent ?? 0;
             return (
               <Panel key={thesis.id} className="stack gap-sm">
                 <div className="row between wrap gap-sm">
@@ -51,14 +57,22 @@ export function ThesisView() {
                     <div className="stack" style={{ gap: 2 }}>
                       <strong>{thesis.title}</strong>
                       <span className="small dim">
-                        {thesis.symbol} · conviction {thesis.conviction}/5 · {formatDate(thesis.createdAt)}
+                        {thesis.symbol} · {nameForSymbol(symbol)} · conviction {thesis.conviction}/5 · {formatDate(thesis.createdAt)}
                         {linked ? " · linked" : ""}
                       </span>
                     </div>
                   </div>
-                  <button className="btn btn-sm btn-danger btn-icon" onClick={() => actions.removeThesis(thesis.id)} aria-label="Delete thesis">
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="row gap-sm" style={{ alignItems: "center" }}>
+                    <div className="stack" style={{ alignItems: "flex-end", gap: 2 }} aria-label={`Live quote for ${symbol}`}>
+                      <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
+                      <span className={`small ${quote ? (change >= 0 ? "gain" : "loss") : "dim"}`}>
+                        {quote ? formatPercent(change, true) : "no quote"}
+                      </span>
+                    </div>
+                    <button className="btn btn-sm btn-danger btn-icon" onClick={() => actions.removeThesis(thesis.id)} aria-label="Delete thesis">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
                 <p className="muted small">{thesis.rationale}</p>
                 {thesis.risks ? <p className="small dim">Risks / invalidation: {thesis.risks}</p> : null}
@@ -95,7 +109,7 @@ export function ThesisView() {
           </div>
           {error ? <span className="form-error">{error}</span> : null}
           <button type="submit" className="btn btn-primary" style={{ width: "fit-content" }}>
-            Save thesis (+40 XP)
+            Save thesis
           </button>
         </form>
       </Panel>
