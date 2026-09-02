@@ -55,8 +55,9 @@ test("addThesis auto-links a matching holding that has no thesis", () => {
   const bought = buy(createInitialState(), { symbol: "AAPL", shares: 1, price: 100 });
   const withThesis = addThesis(bought, { symbol: "AAPL", title: "Quality", rationale: "Durable moat" });
   const holding = withThesis.holdings.find((h) => h.symbol === "AAPL");
-  const thesis = withThesis.theses[0];
-  assert.equal(holding?.thesisId, thesis.id);
+  const thesis = withThesis.theses.find((t) => t.symbol === "AAPL");
+  assert.ok(thesis);
+  assert.equal(holding?.thesisId, thesis?.id);
 });
 
 test("migrateUnknown upgrades a v1 state (dropping removed fields) and rejects garbage", () => {
