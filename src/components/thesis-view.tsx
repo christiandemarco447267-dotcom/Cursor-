@@ -2,16 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
+import { formatCurrency, formatDate, formatNumber, formatPercent, formatSignedCurrency } from "@/lib/format";
 import { nameForSymbol } from "@/lib/market";
-import { quoteMap } from "@/lib/portfolio";
+import { quoteMap, type HoldingValue } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { isValidSymbol, normalizeSymbol } from "@/lib/validation";
-import { EmptyState, Loading, Panel, PageHeader } from "./ui";
+import { EmptyState, Loading, Panel, PageHeader, Sparkline } from "./ui";
 
 export function ThesisView() {
-  const { ready, state, quotes, actions } = useApp();
+  const { ready, state, summary, quotes, actions } = useApp();
   const prices = useMemo(() => quoteMap(quotes), [quotes]);
+  // Map each thesis to its linked position so the card can show real numbers.
+  const positionByThesis = useMemo(() => {
+    const map = new Map<string, HoldingValue>();
+    for (const holding of summary?.holdings ?? []) {
+      if (holding.thesisId) map.set(holding.thesisId, holding);
+    }
+    return map;
+  }, [summary]);
   const [symbol, setSymbol] = useState("");
   const [title, setTitle] = useState("");
   const [rationale, setRationale] = useState("");
@@ -46,9 +54,12 @@ export function ThesisView() {
         <div className="stack gap-md">
           {state.theses.map((thesis) => {
             const symbol = normalizeSymbol(thesis.symbol);
-            const linked = state.holdings.some((h) => h.thesisId === thesis.id);
+            const position = positionByThesis.get(thesis.id);
             const quote = prices.get(symbol);
             const change = quote?.changePercent ?? 0;
+            // Day change for the linked position, in dollars.
+            const dayChange =
+              quote && position ? (quote.price - quote.previousClose) * position.shares : null;
             return (
               <Panel key={thesis.id} className="stack gap-sm">
                 <div className="row between wrap gap-sm">
@@ -58,11 +69,12 @@ export function ThesisView() {
                       <strong>{thesis.title}</strong>
                       <span className="small dim">
                         {thesis.symbol} · {nameForSymbol(symbol)} · conviction {thesis.conviction}/5 · {formatDate(thesis.createdAt)}
-                        {linked ? " · linked" : ""}
+                        {position ? " · linked" : ""}
                       </span>
                     </div>
                   </div>
                   <div className="row gap-sm" style={{ alignItems: "center" }}>
+                    <Sparkline symbol={symbol} />
                     <div className="stack" style={{ alignItems: "flex-end", gap: 2 }} aria-label={`Live quote for ${symbol}`}>
                       <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
                       <span className={`small ${quote ? (change >= 0 ? "gain" : "loss") : "dim"}`}>
@@ -74,6 +86,28 @@ export function ThesisView() {
                     </button>
                   </div>
                 </div>
+
+                {position ? (
+                  <div className="row between wrap gap-sm">
+                    <span className="small muted">
+                      {formatNumber(position.shares)} sh · avg {formatCurrency(position.avgCost)} · value {formatCurrency(position.marketValue)}
+                    </span>
+                    <span className="small dim">
+                      {dayChange !== null ? (
+                        <>
+                          Today <span className={dayChange >= 0 ? "gain" : "loss"}>{formatSignedCurrency(dayChange)}</span> ·{" "}
+                        </>
+                      ) : null}
+                      Unrealized{" "}
+                      <span className={position.gain >= 0 ? "gain" : "loss"}>
+                        {formatSignedCurrency(position.gain)} ({formatPercent(position.gainPercent, true)})
+                      </span>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="small dim">Not linked to a holding — link it from Portfolio to track its performance.</span>
+                )}
+
                 <p className="muted small">{thesis.rationale}</p>
                 {thesis.risks ? <p className="small dim">Risks / invalidation: {thesis.risks}</p> : null}
               </Panel>
