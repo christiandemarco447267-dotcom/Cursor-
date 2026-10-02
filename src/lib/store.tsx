@@ -14,6 +14,7 @@ import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./p
 import * as mutations from "./storage";
 import { LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
 import { AppStateSchema, type AppState, type MarketSnapshot, type MarketStatus, type Quote } from "./types";
+import { normalizeSymbol } from "./validation";
 
 // ---- Realtime market config ----------------------------------------------
 
@@ -182,7 +183,10 @@ const AppContext = createContext<AppApi | null>(null);
 function requestSymbols(state: AppState | null): string[] {
   const universe = DEMO_UNIVERSE.map((entry) => entry.symbol);
   const held = state ? portfolioSymbols(state) : [];
-  return Array.from(new Set([...held, ...universe])).slice(0, 20);
+  // Include thesis symbols so the market API returns a quote for every thesis,
+  // even one written about a ticker that isn't currently held.
+  const thesisSymbols = state ? state.theses.map((t) => normalizeSymbol(t.symbol)) : [];
+  return Array.from(new Set([...held, ...thesisSymbols, ...universe])).slice(0, 20);
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
