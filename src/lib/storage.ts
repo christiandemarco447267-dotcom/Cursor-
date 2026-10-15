@@ -37,6 +37,32 @@ export function createInitialState(): AppState {
     { symbol: "VXUS", shares: 55, avgCost: 58.2 },
     { symbol: "BND", shares: 40, avgCost: 72.1 },
   ];
+  // A starter thesis for each seeded holding so the demo shows the linkage
+  // (and the "thesis coverage" insight) working out of the box.
+  const seedTheses: Record<string, Pick<Thesis, "title" | "rationale" | "risks" | "conviction">> = {
+    VTI: {
+      title: "Own the entire US market",
+      rationale:
+        "A single low-cost fund that holds essentially every US public company. Broad diversification plus long-run earnings growth make it a durable core holding I can keep adding to through any cycle.",
+      risks: "Market-wide drawdowns and stretches of weak US growth; it offers no shelter when the whole market falls.",
+      conviction: 5,
+    },
+    VXUS: {
+      title: "Diversify beyond the US",
+      rationale:
+        "Exposure to developed and emerging markets outside the US. It broadens the book and taps growth and valuations that don't move one-for-one with domestic stocks.",
+      risks: "Currency swings, geopolitical risk, and periods where international equities lag the US.",
+      conviction: 4,
+    },
+    BND: {
+      title: "Ballast for the portfolio",
+      rationale:
+        "A broad US investment-grade bond fund held for stability and income. It dampens overall volatility and provides dry powder to rebalance into stocks when they fall.",
+      risks: "Rising interest rates pressure bond prices, and real returns can be thin when inflation runs hot.",
+      conviction: 3,
+    },
+  };
+
   const startingCash = 25_000;
   const investedCost = seedHoldings.reduce((sum, h) => sum + h.shares * h.avgCost, 0);
   const initialDeposit = round2(startingCash + investedCost);
@@ -51,6 +77,24 @@ export function createInitialState(): AppState {
       createdAt: created,
     },
   ];
+
+  // Build theses first so each holding can link to the appropriate one.
+  const thesisIdBySymbol: Record<string, string> = {};
+  const theses: Thesis[] = seedHoldings.map((h) => {
+    const seed = seedTheses[h.symbol];
+    const id = newId();
+    thesisIdBySymbol[h.symbol] = id;
+    return {
+      id,
+      symbol: h.symbol,
+      title: seed.title,
+      rationale: seed.rationale,
+      risks: seed.risks,
+      conviction: seed.conviction,
+      createdAt: created,
+      updatedAt: created,
+    };
+  });
 
   let runningCash = initialDeposit;
   const holdings = seedHoldings.map((h) => {
@@ -73,6 +117,7 @@ export function createInitialState(): AppState {
       name: nameForSymbol(h.symbol),
       shares: h.shares,
       avgCost: h.avgCost,
+      thesisId: thesisIdBySymbol[h.symbol],
       createdAt: created,
       updatedAt: created,
     };
@@ -86,7 +131,7 @@ export function createInitialState(): AppState {
     profile: { experience: null, focus: null, avatarColor: "#0d9488" },
     cash: runningCash,
     holdings,
-    theses: [],
+    theses,
     transactions,
     createdAt: created,
     updatedAt: created,
