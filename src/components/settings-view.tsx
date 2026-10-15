@@ -125,9 +125,12 @@ export function SettingsView() {
           <ShieldCheck size={18} /> <strong>How your data is handled</strong>
         </span>
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-          <li>Portfolio, goals, theses, and check-ins are stored only in your browser (localStorage).</li>
+          <li>Portfolio, theses, and transactions are stored only in your browser (localStorage).</li>
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
-          <li>Market requests go through a server proxy that keeps any API key server-side.</li>
+          <li>
+            Live quotes use the server market proxy when available; on static hosting an optional public Finnhub key
+            can fetch quotes in the browser.
+          </li>
           <li>Responses ship strict security headers (CSP, no-sniff, frame denial) via the proxy.</li>
         </ul>
       </Panel>

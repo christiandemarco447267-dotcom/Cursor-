@@ -16,7 +16,7 @@ const TRUST = [
   {
     icon: Lock,
     title: "Local-first & private",
-    body: "Your portfolio lives in your browser. The market proxy keeps any API key server-side and ships strict security headers.",
+    body: "Your portfolio lives in your browser. Market data is proxied when possible, and responses ship strict security headers.",
   },
 ];
 
