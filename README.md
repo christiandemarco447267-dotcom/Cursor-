@@ -1,5 +1,11 @@
 # Sentia
 
+[![CI](https://github.com/christiandemarco447267-dotcom/Cursor-/actions/workflows/ci.yml/badge.svg)](https://github.com/christiandemarco447267-dotcom/Cursor-/actions/workflows/ci.yml)
+[![Deploy to GitHub Pages](https://github.com/christiandemarco447267-dotcom/Cursor-/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/christiandemarco447267-dotcom/Cursor-/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-7c3aed.svg)](LICENSE)
+
+**Live demo:** https://christiandemarco447267-dotcom.github.io/Cursor-/
+
 **Sentia** is a stable, professional paper-trading coach — an educational, local-first
 app for practicing a disciplined investing *process*. Not a brokerage and not investment
 advice.
@@ -33,7 +39,8 @@ run (and Pages is set to “GitHub Actions” in repo settings), the app is avai
 > **https://christiandemarco447267-dotcom.github.io/Cursor-/**
 
 This is a fully static, browser-only build (local-first data + client-side demo market
-prices), so everything except live quotes works exactly like the dev server.
+prices), so everything except live quotes works exactly like the dev server. Simulated
+prices are always labelled with a small **Demo prices** badge.
 
 **Option B — One click in GitHub Codespaces (full app, incl. the market API).**
 On the repo page: **Code → Codespaces → Create codespace on this branch**. The container
@@ -66,6 +73,17 @@ cp .env.example .env.local
 | `npm run lint`     | ESLint                |
 | `npm run typecheck`| TypeScript check      |
 | `npm test`         | Unit tests            |
+| `npm run og:image` | Regenerate `public/og-image.png` (social share image) |
+
+## Continuous integration & deployment
+
+- **CI** (`.github/workflows/ci.yml`) runs `npm ci`, typecheck, lint, tests, and a production
+  build on every pull request and on pushes to `main` (Node 22).
+- **Deploy** (`.github/workflows/deploy-pages.yml`) publishes a static export to GitHub Pages on
+  every push to `main` (or manually via *Run workflow*).
+- The canonical site URL used for metadata, the sitemap, and social cards lives in
+  `src/lib/site.ts`. After a repo rename or custom domain, change it there (or set
+  `NEXT_PUBLIC_SITE_URL` at build time).
 
 ## Architecture
 
@@ -76,7 +94,17 @@ cp .env.example .env.local
 - **`src/components`** — one client view component per screen plus shared UI primitives.
 - **`src/proxy.ts`** — security headers (Next.js 16 `proxy` convention).
 
+## Privacy & terms
+
+Sentia has no accounts and no server-side storage: everything you enter stays in your browser
+(`localStorage`). See the in-app [Privacy](https://christiandemarco447267-dotcom.github.io/Cursor-/privacy/)
+and [Terms](https://christiandemarco447267-dotcom.github.io/Cursor-/terms/) pages (`/privacy`, `/terms`).
+
 ## Disclaimer
 
-Educational paper-trading software. No real money, no brokerage integration. Prices are
-simulated unless a Finnhub key is configured.
+Educational paper-trading software. Not investment advice and not a brokerage. No real money,
+no brokerage integration. Prices are simulated unless a Finnhub key is configured.
+
+## License
+
+[MIT](LICENSE) © 2026 Christian DeMarco

@@ -24,7 +24,7 @@ function marketLabel(status: string): string {
     case "closed":
       return "Live · market closed";
     case "demo":
-      return "Live demo · auto-updating";
+      return "Demo prices · auto-updating";
     case "error":
       return "Market unavailable";
     default:

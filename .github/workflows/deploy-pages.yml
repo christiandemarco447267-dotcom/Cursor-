@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - cursor/ainvestpro-stable-rebuild-5ca3
   workflow_dispatch:
 
 # Allow the workflow to publish to GitHub Pages.

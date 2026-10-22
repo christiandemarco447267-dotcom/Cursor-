@@ -79,11 +79,12 @@ export function TradeView() {
 
       <div className="grid grid-2">
         <Panel strong className="stack gap-md">
-          <div className="row gap-sm">
+          <div className="row gap-sm" role="group" aria-label="Order side">
             <button
               type="button"
               className={`btn btn-sm ${mode === "buy" ? "btn-primary" : ""}`}
               onClick={() => setMode("buy")}
+              aria-pressed={mode === "buy"}
             >
               <ArrowUpRight size={15} /> Buy
             </button>
@@ -91,6 +92,7 @@ export function TradeView() {
               type="button"
               className={`btn btn-sm ${mode === "sell" ? "btn-primary" : ""}`}
               onClick={() => setMode("sell")}
+              aria-pressed={mode === "sell"}
             >
               <ArrowDownLeft size={15} /> Sell
             </button>
@@ -110,6 +112,7 @@ export function TradeView() {
                 placeholder="e.g. AAPL"
                 maxLength={12}
                 autoComplete="off"
+                aria-describedby={normalized ? "symbol-name" : undefined}
               />
               <datalist id="symbol-options">
                 {DEMO_UNIVERSE.map((entry) => (
@@ -118,7 +121,11 @@ export function TradeView() {
                   </option>
                 ))}
               </datalist>
-              {normalized ? <span className="small dim">{nameForSymbol(normalized)}</span> : null}
+              {normalized ? (
+                <span id="symbol-name" className="small dim">
+                  {nameForSymbol(normalized)}
+                </span>
+              ) : null}
             </div>
 
             <div className="grid grid-2">
@@ -163,8 +170,14 @@ export function TradeView() {
               </div>
             ) : null}
 
-            {error ? <span className="form-error">{error}</span> : null}
-            {notice ? <span className="form-ok">{notice}</span> : null}
+            <div aria-live="polite" className="stack gap-sm">
+              {error ? (
+                <span className="form-error" role="alert">
+                  {error}
+                </span>
+              ) : null}
+              {notice ? <span className="form-ok">{notice}</span> : null}
+            </div>
 
             <button type="submit" className="btn btn-primary btn-block">
               {mode === "buy" ? "Buy shares" : "Sell shares"}

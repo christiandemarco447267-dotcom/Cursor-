@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, LineChart, Lock, ShieldCheck, Sparkles } from "lucide-react";
 import { assetPath } from "@/lib/asset";
+import { SiteFooter } from "./site-footer";
 
 const TRUST = [
   {
@@ -16,7 +17,7 @@ const TRUST = [
   {
     icon: Lock,
     title: "Local-first & private",
-    body: "Your portfolio lives in your browser. Market data is proxied when possible, and responses ship strict security headers.",
+    body: "Your portfolio lives in your browser. The market proxy keeps any API key server-side and ships strict security headers.",
   },
 ];
 
@@ -28,7 +29,7 @@ export function Landing() {
         <header className="row between" style={{ padding: "24px 0" }}>
           <div className="brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetPath("/icon.png")} alt="Sentia logo" className="brand-mark" width={36} height={36} />
+            <img src={assetPath("/icon.png")} alt="" className="brand-mark" width={36} height={36} />
             Sentia
           </div>
           <Link href="/app" className="btn btn-sm">
@@ -61,7 +62,7 @@ export function Landing() {
         <section className="grid grid-3" style={{ padding: "24px 0 64px" }}>
           {TRUST.map(({ icon: Icon, title, body }) => (
             <div key={title} className="panel trust-card">
-              <span className="trust-icon">
+              <span className="trust-icon" aria-hidden="true">
                 <Icon size={20} />
               </span>
               <strong>{title}</strong>
@@ -70,10 +71,7 @@ export function Landing() {
           ))}
         </section>
 
-        <footer className="disclaimer" style={{ padding: "0 0 48px" }}>
-          Sentia is educational paper-trading software. It is not investment advice, not a brokerage, and holds no
-          real money. Prices are simulated unless a market data key is configured.
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   );

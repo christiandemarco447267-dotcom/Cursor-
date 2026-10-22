@@ -18,7 +18,7 @@
   --border-strong: rgba(74, 45, 110, 0.2);
   --text: #241633;
   --text-muted: #59506d;
-  --text-dim: #8a82a0;
+  --text-dim: #6b6385; /* darkened from #8a82a0 for WCAG AA contrast (~5:1) */
   --primary: #7c3aed;
   --primary-strong: #6d28d9;
   --primary-soft: rgba(124, 58, 237, 0.12);
@@ -427,7 +427,7 @@ button {
 }
 .input::placeholder,
 .textarea::placeholder {
-  color: #64786f;
+  color: #6b6385;
   opacity: 1;
 }
 .textarea {
@@ -941,4 +941,124 @@ button {
   .mood-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+/* ---------- Public footer + legal pages ---------- */
+.site-footer {
+  padding: 0 0 48px;
+}
+.footer-link {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-link:hover {
+  color: var(--primary-strong);
+}
+.legal {
+  max-width: 760px;
+  padding: 48px 0 56px;
+}
+.legal .display-xl {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+}
+.legal-body {
+  padding: 28px;
+}
+.legal-body h2 {
+  font-size: 1.2rem;
+}
+.legal-body ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+.legal-body p {
+  line-height: 1.7;
+}
+.legal-body a,
+.settings-legal a {
+  color: var(--primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Not found / error screens ---------- */
+.status-screen {
+  display: flex;
+  align-items: center;
+}
+.status-inner {
+  position: relative;
+  max-width: 640px;
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+.status-title {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+}
+
+/* ---------- Accessibility ---------- */
+/* Visible keyboard focus for every interactive element (mouse clicks unaffected). */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+input[type="range"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.modal:focus-visible,
+.drawer:focus-visible {
+  outline: none;
+}
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 100;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.main:focus {
+  outline: none;
+}
+
+/* ---------- Demo prices badge ---------- */
+.pill-demo {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.28);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  width: fit-content;
+  white-space: nowrap;
+}
+.pill-compact {
+  margin-right: 8px;
+  font-size: 11px;
+  padding: 3px 8px;
 }

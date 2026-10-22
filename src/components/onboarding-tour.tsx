@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Compass, Lightbulb, NotebookPen, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
 import { useApp } from "@/lib/store";
@@ -54,12 +54,19 @@ const STEPS: Step[] = [
 export function OnboardingTour() {
   const { tourOpen, closeTour, actions } = useApp();
   const [step, setStep] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const finish = () => {
     actions.completeOnboarding();
     closeTour();
     setStep(0);
   };
+
+  // Move focus into the dialog when it opens and whenever the step changes,
+  // so screen readers announce the new step.
+  useEffect(() => {
+    if (tourOpen) dialogRef.current?.focus();
+  }, [tourOpen, step]);
 
   useEffect(() => {
     if (!tourOpen) return;
@@ -80,19 +87,24 @@ export function OnboardingTour() {
   return (
     <div
       className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Getting started tour"
       onClick={(e) => {
         if (e.target === e.currentTarget) finish();
       }}
     >
-      <div className="modal stack gap-md">
+      <div
+        ref={dialogRef}
+        className="modal stack gap-md"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tour-title"
+        aria-describedby="tour-body"
+        tabIndex={-1}
+      >
         <div className="row between">
           <span className="tour-icon">
             <Icon size={24} />
           </span>
-          <button className="btn btn-sm" onClick={finish}>
+          <button type="button" className="btn btn-sm" onClick={finish} aria-label="Skip tour">
             Skip
           </button>
         </div>
@@ -101,8 +113,12 @@ export function OnboardingTour() {
           <span className="eyebrow">
             Step {step + 1} of {STEPS.length}
           </span>
-          <h2 style={{ fontSize: "1.5rem" }}>{current.title}</h2>
-          <p className="muted">{current.body}</p>
+          <h2 id="tour-title" style={{ fontSize: "1.5rem" }}>
+            {current.title}
+          </h2>
+          <p id="tour-body" className="muted">
+            {current.body}
+          </p>
         </div>
 
         {current.href ? (
@@ -112,18 +128,22 @@ export function OnboardingTour() {
         ) : null}
 
         <div className="row between" style={{ marginTop: 8 }}>
-          <div className="tour-dots">
+          <div className="tour-dots" aria-hidden="true">
             {STEPS.map((_, i) => (
               <span key={i} className={clsx("tour-dot", i === step && "active")} />
             ))}
           </div>
           <div className="row gap-sm">
             {step > 0 ? (
-              <button className="btn btn-sm" onClick={() => setStep((s) => s - 1)}>
+              <button type="button" className="btn btn-sm" onClick={() => setStep((s) => s - 1)}>
                 Back
               </button>
             ) : null}
-            <button className="btn btn-primary btn-sm" onClick={() => (isLast ? finish() : setStep((s) => s + 1))}>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
+            >
               {isLast ? "Get started" : "Next"}
             </button>
           </div>

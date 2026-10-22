@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { demoQuote, demoSnapshot, SIM_TICK_MS } from "./market";
+import { demoQuote, demoSnapshot, priceSourceOf, SIM_TICK_MS } from "./market";
 
 test("demoQuote moves over time but keeps a stable previous close", () => {
   const t0 = 1_700_000_000_000;
@@ -26,4 +26,16 @@ test("demoSnapshot returns one quote per unique symbol", () => {
   const snap = demoSnapshot(["AAPL", "aapl", "MSFT"], 1_700_000_000_000);
   assert.equal(snap.quotes.length, 2);
   assert.equal(snap.status, "demo");
+});
+
+test("priceSourceOf reports simulated vs live feeds", () => {
+  const live = { source: "live" as const };
+  const demo = { source: "demo" as const };
+  assert.equal(priceSourceOf({ status: "loading", quotes: [] }), "pending");
+  assert.equal(priceSourceOf({ status: "demo", quotes: [demo] }), "demo");
+  assert.equal(priceSourceOf(demoSnapshot(["AAPL", "MSFT"])), "demo");
+  assert.equal(priceSourceOf({ status: "open", quotes: [demo, demo] }), "demo");
+  assert.equal(priceSourceOf({ status: "error", quotes: [] }), "demo");
+  assert.equal(priceSourceOf({ status: "open", quotes: [live, demo] }), "mixed");
+  assert.equal(priceSourceOf({ status: "closed", quotes: [live, live] }), "live");
 });
