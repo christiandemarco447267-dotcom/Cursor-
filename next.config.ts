@@ -9,6 +9,9 @@ const repo = process.env.PAGES_BASE_PATH ?? "";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // Allow Cloudflare quick tunnels (and similar) to load Next.js dev assets
+  // when testing via a public URL. Production `next start` is unaffected.
+  allowedDevOrigins: ["*.trycloudflare.com"],
   ...(isPages
     ? {
         output: "export",
