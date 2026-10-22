@@ -22,7 +22,8 @@ export function AllocateView() {
         <EmptyState title="Nothing to allocate yet" hint="Add cash or buy a position to see your allocation." />
       ) : (
         <Panel className="stack gap-lg">
-          <div className="alloc-bar">
+          {/* Visual summary only; the list below carries the same data for assistive tech. */}
+          <div className="alloc-bar" aria-hidden="true">
             {slices.map((slice, i) => (
               <div
                 key={slice.key}

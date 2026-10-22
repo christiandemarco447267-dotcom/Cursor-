@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { AVATAR_COLORS, EXPERIENCE_OPTIONS, FOCUS_OPTIONS, initialsOf } from "@/lib/profile";
 import type { ProfileInput } from "@/lib/storage";
@@ -50,22 +50,32 @@ function ProfileSetupDialog({
 
   const save = () => onSave({ name, avatarColor, experience, focus });
 
+  // Escape behaves like "Skip" (saves what's entered so far and closes).
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") saveRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <div
       className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Set up your profile"
       onClick={(e) => {
         if (e.target === e.currentTarget) save();
       }}
     >
-      <div className="modal stack gap-md">
+      <div className="modal stack gap-md" role="dialog" aria-modal="true" aria-label="Set up your profile">
         <div className="row between">
           <span className="eyebrow">
             Set up your profile · {step + 1} of {TOTAL}
           </span>
-          <button className="btn btn-sm" onClick={save}>
+          <button type="button" className="btn btn-sm" onClick={save} aria-label="Skip profile setup">
             Skip
           </button>
         </div>
@@ -95,13 +105,14 @@ function ProfileSetupDialog({
               />
             </div>
             <div className="field">
-              <label>Pick an avatar color</label>
-              <div className="row gap-sm wrap">
+              <label id="setup-color-label">Pick an avatar color</label>
+              <div className="row gap-sm wrap" role="group" aria-labelledby="setup-color-label">
                 {AVATAR_COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
                     aria-label={`Avatar color ${color}`}
+                    aria-pressed={color === avatarColor}
                     className={clsx("swatch", color === avatarColor && "selected")}
                     style={{ background: color }}
                     onClick={() => setAvatarColor(color)}
@@ -121,6 +132,7 @@ function ProfileSetupDialog({
                   key={option.value}
                   type="button"
                   className={clsx("choice", experience === option.value && "selected")}
+                  aria-pressed={experience === option.value}
                   onClick={() => setExperience(option.value)}
                 >
                   <strong>{option.label}</strong>
@@ -140,6 +152,7 @@ function ProfileSetupDialog({
                   key={option.value}
                   type="button"
                   className={clsx("choice", focus === option.value && "selected")}
+                  aria-pressed={focus === option.value}
                   onClick={() => setFocus(option.value)}
                 >
                   <strong>{option.label}</strong>
@@ -151,18 +164,22 @@ function ProfileSetupDialog({
         ) : null}
 
         <div className="row between" style={{ marginTop: 4 }}>
-          <div className="tour-dots">
+          <div className="tour-dots" aria-hidden="true">
             {Array.from({ length: TOTAL }).map((_, i) => (
               <span key={i} className={clsx("tour-dot", i === step && "active")} />
             ))}
           </div>
           <div className="row gap-sm">
             {step > 0 ? (
-              <button className="btn btn-sm" onClick={() => setStep((s) => s - 1)}>
+              <button type="button" className="btn btn-sm" onClick={() => setStep((s) => s - 1)}>
                 Back
               </button>
             ) : null}
-            <button className="btn btn-primary btn-sm" onClick={() => (isLast ? save() : setStep((s) => s + 1))}>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => (isLast ? save() : setStep((s) => s + 1))}
+            >
               {isLast ? "Finish setup" : "Next"}
             </button>
           </div>

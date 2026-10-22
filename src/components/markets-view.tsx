@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import { DEMO_UNIVERSE, nameForSymbol } from "@/lib/market";
+import { DEMO_UNIVERSE, nameForSymbol, priceSourceOf } from "@/lib/market";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { normalizeSymbol } from "@/lib/validation";
-import { Loading, Panel, PageHeader, Sparkline } from "./ui";
+import { DemoPricesBadge, Loading, Panel, PageHeader, Sparkline } from "./ui";
 
 export function MarketsView() {
   const { ready, state, quotes, market, refreshMarket } = useApp();
@@ -29,7 +29,8 @@ export function MarketsView() {
         ? "Live · market closed"
         : market.status === "error"
           ? "Market unavailable — showing last data"
-          : "Live demo prices · auto-updating every 15s";
+          : "Simulated prices · auto-updating every 15s";
+  const simulated = priceSourceOf(market) === "demo" || priceSourceOf(market) === "mixed";
 
   return (
     <div className="stack gap-lg animate-in">
@@ -44,8 +45,17 @@ export function MarketsView() {
       />
 
       <Panel className="row between wrap gap-sm">
-        <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{statusText}</span>
+        <span className="row wrap gap-sm">
+          <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{statusText}</span>
+          <DemoPricesBadge />
+        </span>
         {market.updatedAt ? <span className="small dim">Updated {new Date(market.updatedAt).toLocaleTimeString()}</span> : null}
+        {simulated ? (
+          <p className="small muted" style={{ flexBasis: "100%", margin: 0 }}>
+            These prices are simulated for practice and are not real market data. Self-hosted builds can enable live
+            quotes with a Finnhub key.
+          </p>
+        ) : null}
       </Panel>
 
       <Panel>
@@ -65,7 +75,11 @@ export function MarketsView() {
                   <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
                   <span className={`small ${change >= 0 ? "gain" : "loss"}`}>{formatPercent(change, true)}</span>
                 </div>
-                <Link href={`/app/trade?symbol=${encodeURIComponent(symbol)}`} className="btn btn-sm">
+                <Link
+                  href={`/app/trade?symbol=${encodeURIComponent(symbol)}`}
+                  className="btn btn-sm"
+                  aria-label={`Trade ${symbol}`}
+                >
                   Trade
                 </Link>
               </div>

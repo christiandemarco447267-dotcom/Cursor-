@@ -80,7 +80,11 @@ export function PortfolioView() {
                           </option>
                         ))}
                       </select>
-                      <Link href={`/app/trade?symbol=${encodeURIComponent(holding.symbol)}`} className="btn btn-sm">
+                      <Link
+                        href={`/app/trade?symbol=${encodeURIComponent(holding.symbol)}`}
+                        className="btn btn-sm"
+                        aria-label={`Trade ${holding.symbol}`}
+                      >
                         Trade
                       </Link>
                     </div>

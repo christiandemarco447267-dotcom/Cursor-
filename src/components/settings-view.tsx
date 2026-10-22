@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { localDayKey } from "@/lib/market";
@@ -125,14 +126,14 @@ export function SettingsView() {
           <ShieldCheck size={18} /> <strong>How your data is handled</strong>
         </span>
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-          <li>Portfolio, theses, and transactions are stored only in your browser (localStorage).</li>
+          <li>Portfolio, goals, theses, and check-ins are stored only in your browser (localStorage).</li>
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
-          <li>
-            Live quotes use the server market proxy when available; on static hosting an optional public Finnhub key
-            can fetch quotes in the browser.
-          </li>
+          <li>Market requests go through a server proxy that keeps any API key server-side.</li>
           <li>Responses ship strict security headers (CSP, no-sniff, frame denial) via the proxy.</li>
         </ul>
+        <span className="small muted settings-legal">
+          Read the <Link href="/privacy">Privacy policy</Link> and <Link href="/terms">Terms of use</Link>.
+        </span>
       </Panel>
 
       <div className="grid grid-3">
@@ -149,7 +150,14 @@ export function SettingsView() {
           <button className="btn" onClick={() => fileRef.current?.click()}>
             <Upload size={16} /> Import JSON
           </button>
-          <input ref={fileRef} type="file" accept="application/json" onChange={importData} hidden />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            onChange={importData}
+            hidden
+            aria-label="Choose a backup file to import"
+          />
         </Panel>
         <Panel className="stack gap-sm">
           <strong>Reset</strong>
@@ -160,7 +168,13 @@ export function SettingsView() {
         </Panel>
       </div>
 
-      {message ? <span className={message.tone === "ok" ? "form-ok" : "form-error"}>{message.text}</span> : null}
+      <div aria-live="polite">
+        {message ? (
+          <span className={message.tone === "ok" ? "form-ok" : "form-error"} role={message.tone === "error" ? "alert" : undefined}>
+            {message.text}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
