@@ -75,13 +75,14 @@ export function ThesisView() {
                   </div>
                   <div className="row gap-sm" style={{ alignItems: "center" }}>
                     <Sparkline symbol={symbol} />
-                    <div className="stack" style={{ alignItems: "flex-end", gap: 2 }} aria-label={`Live quote for ${symbol}`}>
+                    <div className="stack" style={{ alignItems: "flex-end", gap: 2 }}>
+                      <span className="sr-only">Quote for {symbol}:</span>
                       <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
                       <span className={`small ${quote ? (change >= 0 ? "gain" : "loss") : "dim"}`}>
                         {quote ? formatPercent(change, true) : "no quote"}
                       </span>
                     </div>
-                    <button className="btn btn-sm btn-danger btn-icon" onClick={() => actions.removeThesis(thesis.id)} aria-label="Delete thesis">
+                    <button className="btn btn-sm btn-danger btn-icon" onClick={() => actions.removeThesis(thesis.id)} aria-label={`Delete thesis: ${thesis.title}`} title="Delete thesis">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -126,7 +127,7 @@ export function ThesisView() {
             </div>
             <div className="field">
               <label htmlFor="thesis-conviction">Conviction: {conviction}/5</label>
-              <input id="thesis-conviction" type="range" min={1} max={5} value={conviction} onChange={(e) => setConviction(Number(e.target.value))} />
+              <input id="thesis-conviction" type="range" min={1} max={5} value={conviction} aria-valuetext={`${conviction} out of 5`} onChange={(e) => setConviction(Number(e.target.value))} />
             </div>
           </div>
           <div className="field">
@@ -141,7 +142,11 @@ export function ThesisView() {
             <label htmlFor="thesis-risks">Risks / what would prove you wrong (optional)</label>
             <textarea id="thesis-risks" className="textarea" value={risks} onChange={(e) => setRisks(e.target.value)} maxLength={2000} />
           </div>
-          {error ? <span className="form-error">{error}</span> : null}
+          {error ? (
+            <span className="form-error" role="alert">
+              {error}
+            </span>
+          ) : null}
           <button type="submit" className="btn btn-primary" style={{ width: "fit-content" }}>
             Save thesis
           </button>

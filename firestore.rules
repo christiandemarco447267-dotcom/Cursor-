@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// Sentia: each signed-in user can read/write only their own documents under
+// users/{uid} (the paper account lives at users/{uid}/state/current).
+// A verified email is required, matching the app, which blocks unverified accounts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email_verified == true;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /state/{docId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['schemaVersion', 'updatedAt', 'state', 'savedAt'])
+          && request.resource.data.state is map
+          && request.resource.data.schemaVersion is int
+          && request.resource.data.updatedAt is string;
+      }
+
+      // Any other per-user documents added later: owner-only.
+      match /{collection}/{docId} {
+        allow read, write: if isOwner(uid) && collection != 'state';
+      }
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -21,6 +21,10 @@
 /build
 
 # misc
+.static-build-stash/
+.firebase/
+firebase-debug.log
+firestore-debug.log
 .DS_Store
 *.pem
 

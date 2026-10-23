@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 // runs entirely in the browser with client-side demo market data.
 const isPages = process.env.GITHUB_PAGES === "true";
 const repo = process.env.PAGES_BASE_PATH ?? "";
+// Firebase Hosting (and any other static host at the domain root): `npm run build:firebase`.
+const isStaticRoot = process.env.STATIC_EXPORT === "true";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -17,7 +19,13 @@ const nextConfig: NextConfig = {
         images: { unoptimized: true },
         trailingSlash: true,
       }
-    : {}),
+    : isStaticRoot
+      ? {
+          output: "export",
+          images: { unoptimized: true },
+          trailingSlash: true,
+        }
+      : {}),
 };
 
 export default nextConfig;

@@ -7,7 +7,15 @@
  * development, where the dev bundler relies on it.
  */
 export function getSecurityHeaders(isDev = process.env.NODE_ENV !== "production"): Record<string, string> {
-  const scriptSrc = ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])].join(" ");
+  // Google hosts serve reCAPTCHA (required by Firebase phone auth / SMS two-step verification).
+  const scriptSrc = [
+    "'self'",
+    "'unsafe-inline'",
+    ...(isDev ? ["'unsafe-eval'"] : []),
+    "https://www.google.com",
+    "https://www.gstatic.com",
+    "https://apis.google.com",
+  ].join(" ");
 
   const csp = [
     "default-src 'self'",
@@ -18,8 +26,11 @@ export function getSecurityHeaders(isDev = process.env.NODE_ENV !== "production"
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     `script-src ${scriptSrc}`,
-    // 'self' for the API proxy; finnhub.io for optional client-side realtime quotes.
-    "connect-src 'self' https://finnhub.io",
+    // 'self' for the API proxy; finnhub.io for optional client-side realtime quotes;
+    // Google/Firebase endpoints for Firebase Auth + Firestore (accounts & cloud sync).
+    "connect-src 'self' https://finnhub.io https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com",
+    // Firebase Auth helper iframe + reCAPTCHA challenge frames.
+    "frame-src 'self' https://*.firebaseapp.com https://www.google.com https://recaptcha.google.com",
     "form-action 'self'",
   ].join("; ");
 

@@ -1,18 +1,40 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
-import { Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { Cloud, Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { localDayKey } from "@/lib/market";
 import { experienceLabel, focusLabel, initialsOf } from "@/lib/profile";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
+import { AccountSecurity } from "./auth/account-security";
+import { REAUTH_NOTICE_KEY } from "./auth/email-link-complete";
+import { useReauth } from "./auth/reauth";
+
+/** One-shot notice after returning from a re-auth email link. */
+function takeReauthNotice(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const seen = sessionStorage.getItem(REAUTH_NOTICE_KEY) === "1";
+    sessionStorage.removeItem(REAUTH_NOTICE_KEY);
+    return seen;
+  } catch {
+    return false;
+  }
+}
 
 const MAX_IMPORT_BYTES = 1_000_000;
 
 export function SettingsView() {
-  const { ready, state, actions, openTour, openProfileSetup } = useApp();
+  const { ready, state, actions, openTour, openProfileSetup, sync } = useApp();
+  const { configured } = useAuth();
+  const reauth = useReauth();
+  const cloud = sync.mode === "cloud";
   const fileRef = useRef<HTMLInputElement>(null);
-  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(() =>
+    takeReauthNotice() ? { tone: "ok", text: "Identity confirmed. You can finish your security change for the next few minutes." } : null,
+  );
   const [name, setName] = useState(state?.profileName ?? "");
 
   if (!ready || !state) return <Loading />;
@@ -54,10 +76,17 @@ export function SettingsView() {
   };
 
   const reset = () => {
-    if (confirm("Reset your workspace to the starting demo state? This cannot be undone.")) {
+    const prompt = cloud
+      ? "Reset your account's paper portfolio, ledger, and theses to the starting demo? This replaces what's saved in the cloud and cannot be undone."
+      : "Reset your workspace to the starting demo state? This cannot be undone.";
+    if (!confirm(prompt)) return;
+    const doReset = async () => {
       actions.reset();
       setMessage({ tone: "ok", text: "Workspace reset to the starting demo." });
-    }
+    };
+    // Wiping the cloud copy is a sensitive action: require a recent sign-in (password, SMS, or email link).
+    if (cloud) void reauth.run(doReset).catch(() => setMessage({ tone: "error", text: "Couldn't confirm your identity." }));
+    else void doReset();
   };
 
   return (
@@ -105,8 +134,34 @@ export function SettingsView() {
             Save name
           </button>
         </form>
-        <span className="small muted">Used to greet you on the dashboard. Stored only in your browser.</span>
+        <span className="small muted">
+          Used to greet you on the dashboard. {cloud ? "Saved to your account." : "Stored only in your browser."}
+        </span>
       </Panel>
+
+      {cloud ? <AccountSecurity /> : null}
+
+      {configured && !cloud ? (
+        <Panel className="row between wrap gap-sm">
+          <div className="stack" style={{ gap: 2 }}>
+            <span className="row gap-sm">
+              <Cloud size={18} /> <strong>You&apos;re in demo mode</strong>
+            </span>
+            <span className="small muted">
+              Everything is saved in this browser only. Create an account to keep your paper portfolio in sync across devices —
+              your current workspace comes with you.
+            </span>
+          </div>
+          <span className="row wrap gap-sm">
+            <Link href="/signin?next=/app/settings" className="btn">
+              Sign in
+            </Link>
+            <Link href="/signup" className="btn btn-primary">
+              Create account
+            </Link>
+          </span>
+        </Panel>
+      ) : null}
 
       <Panel className="row between wrap gap-sm">
         <div className="stack" style={{ gap: 2 }}>
@@ -125,11 +180,21 @@ export function SettingsView() {
           <ShieldCheck size={18} /> <strong>How your data is handled</strong>
         </span>
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-          <li>Portfolio, goals, theses, and check-ins are stored only in your browser (localStorage).</li>
+          {cloud ? (
+            <li>
+              Your paper account is saved to your Sentia account (Google Cloud Firestore). Only you can read or write it — access
+              is enforced by security rules tied to your verified sign-in.
+            </li>
+          ) : (
+            <li>Portfolio, ledger, theses, and profile are stored only in your browser (localStorage).</li>
+          )}
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
           <li>Market requests go through a server proxy that keeps any API key server-side.</li>
           <li>Responses ship strict security headers (CSP, no-sniff, frame denial) via the proxy.</li>
         </ul>
+        <span className="small muted settings-legal">
+          Read the <Link href="/privacy">Privacy policy</Link> and <Link href="/terms">Terms of use</Link>.
+        </span>
       </Panel>
 
       <div className="grid grid-3">
@@ -146,18 +211,34 @@ export function SettingsView() {
           <button className="btn" onClick={() => fileRef.current?.click()}>
             <Upload size={16} /> Import JSON
           </button>
-          <input ref={fileRef} type="file" accept="application/json" onChange={importData} hidden />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            onChange={importData}
+            hidden
+            aria-label="Choose a backup file to import"
+          />
         </Panel>
         <Panel className="stack gap-sm">
           <strong>Reset</strong>
-          <span className="small muted">Return to the starting demo portfolio.</span>
+          <span className="small muted">
+            Return to the starting demo portfolio.{cloud ? " Requires confirming your identity." : ""}
+          </span>
           <button className="btn btn-danger" onClick={reset}>
             <RotateCcw size={16} /> Reset workspace
           </button>
         </Panel>
       </div>
 
-      {message ? <span className={message.tone === "ok" ? "form-ok" : "form-error"}>{message.text}</span> : null}
+      <div aria-live="polite">
+        {message ? (
+          <span className={message.tone === "ok" ? "form-ok" : "form-error"} role={message.tone === "error" ? "alert" : undefined}>
+            {message.text}
+          </span>
+        ) : null}
+      </div>
+      {reauth.dialog}
     </div>
   );
 }
