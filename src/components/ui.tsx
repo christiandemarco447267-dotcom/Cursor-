@@ -2,11 +2,13 @@
 
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { sparklineForSymbol } from "@/lib/market";
+import { FlaskConical } from "lucide-react";
+import { priceSourceOf, sparklineForSymbol } from "@/lib/market";
+import { useApp } from "@/lib/store";
 
 export function Loading({ label = "Loading your workspace…" }: { label?: string }) {
   return (
-    <div className="loading-block">
+    <div className="loading-block" role="status" aria-live="polite">
       <span className="spinner" aria-hidden="true" />
       <span className="small">{label}</span>
     </div>
@@ -56,10 +58,14 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   );
 }
 
-export function ProgressBar({ percent }: { percent: number }) {
+export function ProgressBar({ percent, label = "Progress" }: { percent: number; label?: string }) {
   const clamped = Math.max(0, Math.min(100, percent));
   return (
-    <div className="progress" role="progressbar" aria-valuenow={Math.round(clamped)} aria-valuemin={0} aria-valuemax={100}>
+    <div
+      className="progress"
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={Math.round(clamped)} aria-valuemin={0} aria-valuemax={100}>
       <span style={{ width: `${clamped}%` }} />
     </div>
   );
@@ -90,5 +96,28 @@ export function Sparkline({ symbol, width = 88, height = 30 }: { symbol: string;
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+/**
+ * Small "Demo prices" badge, shown only while market data is simulated (no live
+ * source — always the case on the static Pages build). Renders nothing for a
+ * fully live feed.
+ */
+export function DemoPricesBadge({ className }: { className?: string }) {
+  const { market } = useApp();
+  const source = priceSourceOf(market);
+  if (source !== "demo" && source !== "mixed") return null;
+  const text = source === "demo" ? "Demo prices" : "Some prices simulated";
+  const detail =
+    source === "demo"
+      ? "Prices are simulated for practice. They are not real market data."
+      : "Live quotes were unavailable for some symbols, so those prices are simulated.";
+  return (
+    <span className={clsx("pill pill-demo", className)} role="status" title={detail}>
+      <FlaskConical size={13} />
+      {text}
+      <span className="sr-only">. {detail}</span>
+    </span>
   );
 }

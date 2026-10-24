@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, LineChart, Lock, ShieldCheck, Sparkles } from "lucide-react";
 import { assetPath } from "@/lib/asset";
+import { SiteFooter } from "./site-footer";
+
+// Accounts are available when the Firebase client config is baked into the build.
+const ACCOUNTS_ENABLED = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
 
 const TRUST = [
   {
@@ -28,12 +32,19 @@ export function Landing() {
         <header className="row between" style={{ padding: "24px 0" }}>
           <div className="brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetPath("/icon.png")} alt="Sentia logo" className="brand-mark" width={36} height={36} />
+            <img src={assetPath("/icon.png")} alt="" className="brand-mark" width={36} height={36} />
             Sentia
           </div>
-          <Link href="/app" className="btn btn-sm">
-            Open app <ArrowRight size={16} />
-          </Link>
+          <span className="row gap-sm">
+            {ACCOUNTS_ENABLED ? (
+              <Link href="/signin" className="btn btn-sm">
+                Sign in
+              </Link>
+            ) : null}
+            <Link href="/app" className="btn btn-sm">
+              Open app <ArrowRight size={16} />
+            </Link>
+          </span>
         </header>
 
         <section className="landing-hero stack gap-lg animate-in" style={{ maxWidth: 720 }}>
@@ -61,7 +72,7 @@ export function Landing() {
         <section className="grid grid-3" style={{ padding: "24px 0 64px" }}>
           {TRUST.map(({ icon: Icon, title, body }) => (
             <div key={title} className="panel trust-card">
-              <span className="trust-icon">
+              <span className="trust-icon" aria-hidden="true">
                 <Icon size={20} />
               </span>
               <strong>{title}</strong>
@@ -70,10 +81,7 @@ export function Landing() {
           ))}
         </section>
 
-        <footer className="disclaimer" style={{ padding: "0 0 48px" }}>
-          Sentia is educational paper-trading software. It is not investment advice, not a brokerage, and holds no
-          real money. Prices are simulated unless a market data key is configured.
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   );

@@ -85,6 +85,23 @@ export function demoQuote(symbol: string, now: number = Date.now()): Quote {
   };
 }
 
+export type PriceSource = "pending" | "live" | "mixed" | "demo";
+
+/**
+ * Where the prices on screen come from, derived from the feed's own reporting
+ * (`status` plus each quote's `source`). "demo" means fully simulated — always
+ * the case on the static GitHub Pages build, or whenever no live provider is
+ * configured/reachable. "mixed" means a live provider answered for only some
+ * symbols and the rest fell back to simulated quotes.
+ */
+export function priceSourceOf(market: { status: string; quotes: Pick<Quote, "source">[] }): PriceSource {
+  if (market.status === "demo") return "demo";
+  if (market.quotes.length === 0) return market.status === "loading" ? "pending" : "demo";
+  const live = market.quotes.filter((q) => q.source === "live").length;
+  if (live === 0) return "demo";
+  return live === market.quotes.length ? "live" : "mixed";
+}
+
 export function demoSnapshot(symbols: string[], now: number = Date.now()): MarketSnapshot {
   const unique = uniqueSymbols(symbols);
   return {
