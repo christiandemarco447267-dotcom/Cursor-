@@ -5,6 +5,7 @@ import { ArrowLeftRight } from "lucide-react";
 import { formatCurrency, formatNumber, formatPercent, formatSignedCurrency } from "@/lib/format";
 import { realizedPnl } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
+import { BenchmarkPanel } from "./benchmark-chart";
 import { EmptyState, Loading, Panel, PageHeader, Sparkline, Stat } from "./ui";
 
 export function PortfolioView() {
@@ -36,6 +37,8 @@ export function PortfolioView() {
           tone={summary.gain >= 0 ? "gain" : "loss"}
         />
       </div>
+
+      <BenchmarkPanel />
 
       <Panel>
         <div className="row between" style={{ marginBottom: 8 }}>

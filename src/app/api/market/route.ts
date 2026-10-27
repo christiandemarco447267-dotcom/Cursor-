@@ -12,7 +12,7 @@ const SymbolsSchema = z
   .optional()
   .transform((value) => (value ? value.split(",") : []));
 
-const DEFAULT_SYMBOLS = ["VTI", "VOO", "VXUS", "BND", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "SCHD"];
+const DEFAULT_SYMBOLS = ["SPY", "VTI", "VOO", "VXUS", "BND", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "SCHD"];
 
 async function fetchFinnhubQuote(symbol: string, apiKey: string): Promise<Quote> {
   try {

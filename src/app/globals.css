@@ -1393,3 +1393,212 @@ input[type="radio"] {
 .topbar .btn-icon {
   flex-shrink: 0;
 }
+
+
+/* =====================================================================
+   Pro features: benchmark chart, watchlist / alerts, order types, toasts.
+   ===================================================================== */
+
+/* ---------- You vs. S&P 500 chart ---------- */
+.bench-wrap {
+  width: 100%;
+  min-width: 0;
+}
+.bench-chart {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+.bench-grid {
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 1;
+}
+.bench-base {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.bench-axis {
+  fill: var(--text-dim);
+  font-size: 11px;
+  font-family: var(--font-sans);
+}
+.bench-you {
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 4px 10px rgba(139, 92, 246, 0.45));
+}
+.bench-spy {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+.bench-dot {
+  fill: #c4b5fd;
+  stroke: #1e1b4b;
+  stroke-width: 2;
+}
+.bench-dot-spy {
+  fill: var(--accent);
+  stroke: #062b2a;
+  stroke-width: 2;
+}
+.legend-line {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 3px solid #a78bfa;
+  border-radius: 2px;
+}
+.legend-spy {
+  border-top: 2px dashed var(--accent);
+}
+.bench-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.bench-stat {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+@media (max-width: 900px) {
+  .bench-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Segmented control (order type) ---------- */
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+.segmented button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s var(--ease), color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.segmented button:hover {
+  color: var(--text);
+}
+.segmented button.active {
+  background: var(--grad-primary);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: var(--glow-primary), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- Watchlist ---------- */
+.star-btn {
+  color: var(--text-muted);
+}
+.star-btn.starred {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.1);
+}
+.alert-form {
+  align-items: center;
+  padding: 12px 14px;
+  margin: 0 0 10px;
+  border-radius: 14px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+}
+@media (max-width: 640px) {
+  .watch-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .list-row:has(.watch-actions) {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- Toasts ---------- */
+.toast-host {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 16px;
+  background: rgba(20, 24, 52, 0.82);
+  border: 1px solid var(--border-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--card-shadow), 0 20px 40px -18px rgba(0, 0, 0, 0.8);
+  animation: toast-in 0.28s var(--ease);
+}
+.toast-icon {
+  display: inline-flex;
+  margin-top: 1px;
+}
+.toast-gain {
+  border-color: rgba(52, 211, 153, 0.45);
+}
+.toast-gain .toast-icon {
+  color: var(--gain);
+}
+.toast-loss {
+  border-color: rgba(251, 113, 133, 0.5);
+}
+.toast-loss .toast-icon {
+  color: var(--loss);
+}
+.toast-info {
+  border-color: rgba(167, 139, 250, 0.55);
+}
+.toast-info .toast-icon {
+  color: #c4b5fd;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+.pill-loss {
+  background: rgba(251, 113, 133, 0.12);
+  border-color: rgba(251, 113, 133, 0.38);
+  color: var(--loss);
+}

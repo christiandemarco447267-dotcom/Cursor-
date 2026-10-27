@@ -6,6 +6,7 @@ import { ArrowLeftRight, ArrowRight, ArrowUpRight, Lightbulb, LineChart, PieChar
 import { formatCurrency, formatPercent, formatSignedCurrency } from "@/lib/format";
 import { realizedPnl } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
+import { BenchmarkCard } from "./benchmark-chart";
 import { Loading, Panel } from "./ui";
 
 function greeting(): string {
@@ -103,6 +104,8 @@ export function DashboardHome() {
           View portfolio <ArrowRight size={16} />
         </Link>
       </Panel>
+
+      <BenchmarkCard />
 
       <div className="grid grid-2">
         <QuickLink

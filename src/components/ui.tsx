@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { FlaskConical } from "lucide-react";
+import { BellRing, CircleCheck, CircleX, FlaskConical, Star, X } from "lucide-react";
 import { priceSourceOf, sparklineForSymbol } from "@/lib/market";
 import { useApp } from "@/lib/store";
 
@@ -119,5 +119,56 @@ export function DemoPricesBadge({ className }: { className?: string }) {
       {text}
       <span className="sr-only">. {detail}</span>
     </span>
+  );
+}
+
+/** Star / unstar a ticker on the watchlist. */
+export function StarButton({ symbol, withLabel }: { symbol: string; withLabel?: boolean }) {
+  const { state, actions } = useApp();
+  if (!state) return null;
+  const upper = symbol.trim().toUpperCase();
+  const watched = state.watchlist.some((w) => w.toUpperCase() === upper);
+  const label = watched ? `Remove ${upper} from watchlist` : `Add ${upper} to watchlist`;
+  return (
+    <button
+      type="button"
+      className={clsx("btn btn-sm star-btn", watched && "starred", !withLabel && "btn-icon")}
+      onClick={() => {
+        try {
+          actions.toggleWatch(upper);
+        } catch {
+          // Watchlist full or invalid symbol: nothing to toggle.
+        }
+      }}
+      aria-pressed={watched}
+      aria-label={label}
+      title={label}
+    >
+      <Star size={15} fill={watched ? "currentColor" : "none"} />
+      {withLabel ? (watched ? "Watching" : "Watch") : null}
+    </button>
+  );
+}
+
+/** Stack of in-app notifications (order fills, price alerts). */
+export function ToastHost() {
+  const { toasts, dismissToast } = useApp();
+  return (
+    <div className="toast-host" role="region" aria-label="Notifications" aria-live="polite">
+      {toasts.map((toast) => (
+        <div key={toast.id} className={clsx("toast", `toast-${toast.tone}`)} role="status">
+          <span className="toast-icon" aria-hidden="true">
+            {toast.tone === "gain" ? <CircleCheck size={18} /> : toast.tone === "loss" ? <CircleX size={18} /> : <BellRing size={18} />}
+          </span>
+          <span className="stack grow" style={{ gap: 2, minWidth: 0 }}>
+            <strong>{toast.title}</strong>
+            <span className="small muted">{toast.body}</span>
+          </span>
+          <button type="button" className="btn btn-icon btn-sm" onClick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
