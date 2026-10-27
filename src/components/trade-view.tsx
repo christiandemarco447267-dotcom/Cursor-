@@ -8,7 +8,7 @@ import { MOOD_INFO } from "@/lib/moods";
 import { MOODS, type Mood } from "@/lib/types";
 import { ShareTradeButton } from "./share-card";
 import { formatCurrency, formatNumber, formatRelativeDay } from "@/lib/format";
-import { DEMO_UNIVERSE, nameForSymbol } from "@/lib/market";
+import { DEMO_UNIVERSE, demoQuote, nameForSymbol, priceSourceOf } from "@/lib/market";
 import { orderCondition, orderLabel } from "@/lib/orders";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
@@ -39,7 +39,7 @@ function orderHelp(mode: Mode, kind: OrderKind): string {
 }
 
 export function TradeView() {
-  const { ready, state, quotes, actions } = useApp();
+  const { ready, state, quotes, market, actions } = useApp();
   const searchParams = useSearchParams();
   const initialSymbol = searchParams.get("symbol") ?? "";
 
@@ -57,11 +57,19 @@ export function TradeView() {
   if (!ready || !state) return <Loading />;
 
   const normalized = normalizeSymbol(symbol);
-  const quote = prices.get(normalized);
+  // On the simulated feed every ticker gets a deterministic demo price. A symbol the
+  // feed isn't quoting yet (e.g. a new ticker typed here) gets the same demo quote it
+  // will be valued at once held, so the "use market price" shortcut always matches.
+  const simulatedFeed = priceSourceOf(market) === "demo";
+  const quote = prices.get(normalized) ?? (simulatedFeed && isValidSymbol(normalized) ? demoQuote(normalized) : undefined);
   const held = state.holdings.find((h) => h.symbol.toUpperCase() === normalized);
   const sharesNum = parseAmount(shares);
   const priceNum = parseAmount(price);
   const estimated = sharesNum !== null && priceNum !== null ? sharesNum * priceNum : null;
+  // Market orders execute at the price entered; flag one far from the current quote.
+  const deviationPct =
+    kind === "market" && quote && priceNum !== null && priceNum > 0 ? ((priceNum - quote.price) / quote.price) * 100 : null;
+  const farFromMarket = deviationPct !== null && Math.abs(deviationPct) >= 5;
 
   // Bias Radar nudges for the trade being typed (gentle, never blocking).
   const nudges =
@@ -93,16 +101,12 @@ export function TradeView() {
       setError("Enter a positive number of shares.");
       return;
     }
-    if (priceNum === null || priceNum < 0) {
-      setError("Enter a valid price per share.");
+    if (priceNum === null || priceNum <= 0) {
+      setError(kind === "market" ? "Enter a price per share above $0." : `Enter a ${kind} price above $0.`);
       return;
     }
 
     if (kind !== "market") {
-      if (priceNum <= 0) {
-        setError(`Enter a ${kind} price above $0.`);
-        return;
-      }
       try {
         actions.placeOrder({ symbol: normalized, side: mode, type: kind, shares: sharesNum, triggerPrice: priceNum });
         setNotice(
@@ -252,6 +256,20 @@ export function TradeView() {
                   {kind === "market" ? "Estimated" : `At your ${kind} price, est.`} {mode === "buy" ? "cost" : "proceeds"}
                 </span>
                 <strong>{formatCurrency(estimated)}</strong>
+              </div>
+            ) : null}
+
+            {farFromMarket && quote && deviationPct !== null ? (
+              <div className="nudge small" role="note">
+                <Lightbulb size={16} />
+                <span>
+                  <strong>Check the price.</strong> {formatCurrency(priceNum ?? 0)} is {Math.abs(deviationPct).toFixed(0)}%{" "}
+                  {deviationPct > 0 ? "above" : "below"} the market ({formatCurrency(quote.price)}). Paper trades fill at the
+                  price you enter, so this would {mode === "buy" ? (deviationPct > 0 ? "start you at a loss" : "book an instant paper gain") : deviationPct > 0 ? "book a gain the market isn't offering" : "sell below what the market pays"}.{" "}
+                  <button type="button" className="link-btn" onClick={useMarketPrice}>
+                    Use {formatCurrency(quote.price)}
+                  </button>
+                </span>
               </div>
             ) : null}
 

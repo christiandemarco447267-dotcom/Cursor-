@@ -31,6 +31,7 @@ jobs:
           cache: npm
 
       - name: Setup Pages
+        id: pages
         # Best-effort auto-enable. Works once the repo is public (the token can
         # then create the Pages site); harmless no-op otherwise thanks to
         # continue-on-error, in which case Pages must be enabled once in Settings.
@@ -53,9 +54,14 @@ jobs:
       - name: Build static site
         env:
           GITHUB_PAGES: "true"
-          PAGES_BASE_PATH: "/${{ github.event.repository.name }}"
+          # Base path comes from the Pages config when available (handles custom domains,
+          # where it is empty), else the repository name — e.g. "/Cursor-". Never hardcoded.
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path || format('/{0}', github.event.repository.name) }}
           # Base path for absolute asset URLs (favicon, logo) that Next doesn't auto-prefix.
-          NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path || format('/{0}', github.event.repository.name) }}
+          # Canonical URL for metadata/OG/sitemap/robots. If configure-pages didn't run,
+          # src/lib/site.ts derives it from GITHUB_REPOSITORY_OWNER + PAGES_BASE_PATH.
+          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
           # Tells the client it's a static build (skip the non-existent /api route).
           NEXT_PUBLIC_STATIC_EXPORT: "true"
           # Optional: add a FINNHUB_API_KEY repo secret to enable real realtime quotes.

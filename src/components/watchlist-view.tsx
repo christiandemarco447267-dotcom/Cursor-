@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Bell, BellPlus, BellRing, Trash2 } from "lucide-react";
+import { alertCrossed } from "@/lib/alerts";
 import { formatCurrency, formatPercent, formatRelativeDay } from "@/lib/format";
 import { DEMO_UNIVERSE, nameForSymbol } from "@/lib/market";
 import { quoteMap } from "@/lib/portfolio";
@@ -50,7 +51,8 @@ function NotificationToggle() {
 function AlertForm({ symbol, price, onDone }: { symbol: string; price?: number; onDone: () => void }) {
   const { actions } = useApp();
   const [direction, setDirection] = useState<PriceAlert["direction"]>("above");
-  const [value, setValue] = useState(price ? String(price) : "");
+  // Start 5% above the current price: an alert at today's exact price would fire on the next tick.
+  const [value, setValue] = useState(price ? (Math.round(price * 105) / 100).toFixed(2) : "");
   const [error, setError] = useState("");
 
   const submit = (event: React.FormEvent) => {
@@ -58,6 +60,12 @@ function AlertForm({ symbol, price, onDone }: { symbol: string; price?: number; 
     const target = parseAmount(value);
     if (target === null || target <= 0) {
       setError("Enter a price above $0.");
+      return;
+    }
+    if (price !== undefined && alertCrossed({ direction, price: target }, price)) {
+      setError(
+        `${symbol} is already ${direction === "above" ? "at or above" : "at or below"} ${formatCurrency(target)} (now ${formatCurrency(price)}), so this alert would fire right away. Pick a ${direction === "above" ? "higher" : "lower"} price or flip the direction.`,
+      );
       return;
     }
     try {

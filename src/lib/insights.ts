@@ -73,13 +73,19 @@ export function buildInsights(state: AppState, summary: PortfolioSummary): Insig
       body:
         unlinked.length === 0
           ? "Every holding is backed by a thesis. That's the habit that separates investing from gambling."
-          : `${unlinked.length} holding${unlinked.length === 1 ? "" : "s"} (${unlinked
-              .map((h) => h.symbol)
-              .slice(0, 4)
-              .join(", ")}) lack a linked thesis. Write one so future-you knows why you bought.`,
+          : `${unlinked.length} holding${unlinked.length === 1 ? "" : "s"} (${listSymbols(unlinked.map((h) => h.symbol))}) ${
+              unlinked.length === 1 ? "lacks" : "lack"
+            } a linked thesis. Write one so future-you knows why you bought.`,
       tone: unlinked.length === 0 ? "good" : "watch",
     });
   }
 
   return insights;
+}
+
+/** "A, B, C, D" — or "A, B, C, D and 2 more" so the list always matches the count. */
+export function listSymbols(symbols: string[], max = 4): string {
+  const shown = symbols.slice(0, max).join(", ");
+  const rest = symbols.length - max;
+  return rest > 0 ? `${shown} and ${rest} more` : shown;
 }

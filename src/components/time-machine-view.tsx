@@ -41,7 +41,7 @@ function fmtDate(iso: string) {
 export function TimeMachineView() {
   const { ready, state, actions } = useApp();
   const [picked, setPicked] = useState(SCENARIOS[0]?.id ?? "");
-  const [symbol, setSymbol] = useState("SPY");
+  const [pickedSymbol, setSymbol] = useState("SPY");
   const [shares, setShares] = useState("");
   const [error, setError] = useState("");
 
@@ -96,6 +96,9 @@ export function TimeMachineView() {
   const value = bookValue(book, scenario, day);
   const points = replayChartPoints(curve, session.startCash);
   const symbols = scenarioSymbols(scenario);
+  // The picker survives across scenarios; fall back when the last pick (e.g. GME)
+  // isn't traded in this one, so the select, price and trade always agree.
+  const symbol = symbols.includes(pickedSymbol) ? pickedSymbol : symbols.includes("SPY") ? "SPY" : (symbols[0] ?? "SPY");
   const price = closeOn(scenario, symbol, day);
   const sharesNum = parseAmount(shares);
   const finished = Boolean(session.finishedAt);
@@ -151,7 +154,13 @@ export function TimeMachineView() {
             type="button"
             className="btn btn-sm btn-danger"
             onClick={() => {
-              if (finished || confirm("Abandon this replay? Its progress will be lost.")) actions.endReplay();
+              if (finished || confirm("Abandon this replay? Its progress will be lost.")) {
+                actions.endReplay();
+                // A fresh scenario starts from a clean ticket.
+                setSymbol("SPY");
+                setShares("");
+                setError("");
+              }
             }}
           >
             <RotateCcw size={15} /> {finished ? "New scenario" : "Abandon"}

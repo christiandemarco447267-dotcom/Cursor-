@@ -12,7 +12,7 @@ test("buildInsights flags unlinked holdings in thesis coverage", () => {
   const coverage = insights.find((i) => i.id === "thesis-coverage");
   assert.ok(coverage);
   assert.equal(coverage?.tone, "watch");
-  assert.match(coverage?.body ?? "", /lack a linked thesis/);
+  assert.match(coverage?.body ?? "", /\(AAPL\) lacks a linked thesis/);
 });
 
 test("buildInsights reports full thesis coverage when every holding is linked", () => {

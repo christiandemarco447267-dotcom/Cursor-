@@ -1,9 +1,37 @@
-// Canonical public URL of the deployed site. Change it in ONE place (or set
-// NEXT_PUBLIC_SITE_URL at build time) after a repo rename or custom domain.
-const DEFAULT_SITE_URL = "https://christiandemarco447267-dotcom.github.io/Cursor-/";
+// Canonical public URL of the deployed site, resolved at build time:
+//   1. NEXT_PUBLIC_SITE_URL (custom domain, or what the deploy workflow passes in);
+//   2. otherwise https://<owner>.github.io<base path>/ derived from the GitHub
+//      repository (GITHUB_REPOSITORY_OWNER, set on Actions runners) and the Pages
+//      base path the workflow builds with (PAGES_BASE_PATH / NEXT_PUBLIC_BASE_PATH);
+//   3. otherwise the default below.
+// So a repo rename (e.g. Sentia- → Cursor-) needs no code change.
+const DEFAULT_OWNER = "christiandemarco447267-dotcom";
+const DEFAULT_BASE_PATH = "/Cursor-";
+
+/** Normalize a base path to "" or "/segment" (leading slash, no trailing slash). */
+export function normalizeBasePath(value: string | undefined): string {
+  const trimmed = (value ?? "").trim().replace(/^\/+|\/+$/g, "");
+  return trimmed ? `/${trimmed}` : "";
+}
+
+/** Resolve the canonical site URL from build-time environment variables (pure; unit-tested). */
+export function resolveSiteUrl(env: Record<string, string | undefined>): string {
+  const explicit = env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) return `${explicit.replace(/\/+$/, "")}/`;
+  const owner = (env.GITHUB_REPOSITORY_OWNER || env.GITHUB_REPOSITORY?.split("/")[0] || DEFAULT_OWNER).toLowerCase();
+  const fromRepo = env.GITHUB_REPOSITORY?.split("/")[1];
+  const basePath = normalizeBasePath(env.PAGES_BASE_PATH || env.NEXT_PUBLIC_BASE_PATH || (fromRepo ? `/${fromRepo}` : DEFAULT_BASE_PATH));
+  return `https://${owner}.github.io${basePath}/`;
+}
 
 /** Absolute site URL, always ending in a single "/". */
-export const SITE_URL = `${(process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, "")}/`;
+export const SITE_URL = resolveSiteUrl({
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  GITHUB_REPOSITORY_OWNER: process.env.GITHUB_REPOSITORY_OWNER,
+  GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
+  PAGES_BASE_PATH: process.env.PAGES_BASE_PATH,
+  NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
+});
 
 export const SITE_NAME = "Sentia";
 export const SITE_TAGLINE = "Invest with process";
@@ -15,3 +43,4 @@ export const SITE_DESCRIPTION =
 export function siteUrl(path = "/"): string {
   return new URL(path.replace(/^\/+/, ""), SITE_URL).toString();
 }
+

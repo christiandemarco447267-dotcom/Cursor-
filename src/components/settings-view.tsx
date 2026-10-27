@@ -26,6 +26,8 @@ function takeReauthNotice(): boolean {
 }
 
 const MAX_IMPORT_BYTES = 1_000_000;
+const IS_STATIC_EXPORT = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+const HAS_CLIENT_QUOTES = Boolean(process.env.NEXT_PUBLIC_FINNHUB_API_KEY);
 
 export function SettingsView() {
   const { ready, state, actions, openTour, openProfileSetup, sync } = useApp();
@@ -36,13 +38,17 @@ export function SettingsView() {
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(() =>
     takeReauthNotice() ? { tone: "ok", text: "Identity confirmed. You can finish your security change for the next few minutes." } : null,
   );
-  const [name, setName] = useState(state?.profileName ?? "");
+  // null = not edited, so the field shows the saved name (state can arrive after the
+  // first render on a direct load, or change via "Edit profile setup").
+  const [nameDraft, setName] = useState<string | null>(null);
 
   if (!ready || !state) return <Loading />;
+  const name = nameDraft ?? state.profileName;
 
   const saveName = (event: React.FormEvent) => {
     event.preventDefault();
     actions.setProfileName(name);
+    setName(null);
     setMessage({ tone: "ok", text: name.trim() ? "Name saved." : "Name cleared." });
   };
 
@@ -54,7 +60,8 @@ export function SettingsView() {
     link.href = url;
     link.download = `sentia-backup-${localDayKey(new Date())}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    // Revoking synchronously can cancel the download in Safari/Firefox.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     setMessage({ tone: "ok", text: "Backup downloaded." });
   };
 
@@ -192,8 +199,14 @@ export function SettingsView() {
             <li>Portfolio, ledger, theses, and profile are stored only in your browser (localStorage).</li>
           )}
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
-          <li>Market requests go through a server proxy that keeps any API key server-side.</li>
-          <li>Responses ship strict security headers (CSP, no-sniff, frame denial) via the proxy.</li>
+          {IS_STATIC_EXPORT ? (
+            <li>This static build has no server proxy: prices are {HAS_CLIENT_QUOTES ? "fetched directly from the configured quote provider (simulated as a fallback)" : "simulated in your browser"}.</li>
+          ) : (
+            <>
+              <li>Market requests go through a server proxy that keeps any API key server-side.</li>
+              <li>Responses ship strict security headers (CSP, no-sniff, frame denial) via the proxy.</li>
+            </>
+          )}
         </ul>
         <span className="small muted settings-legal">
           Read the <Link href="/privacy">Privacy policy</Link> and <Link href="/terms">Terms of use</Link>.

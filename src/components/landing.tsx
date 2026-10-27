@@ -20,7 +20,10 @@ const TRUST = [
   {
     icon: Lock,
     title: "Local-first & private",
-    body: "Your portfolio lives in your browser. The market proxy keeps any API key server-side and ships strict security headers.",
+    body:
+      process.env.NEXT_PUBLIC_STATIC_EXPORT === "true" && !ACCOUNTS_ENABLED
+        ? "Your portfolio lives in your browser. This demo runs entirely on your device: no server, no tracking, nothing you enter is sent anywhere."
+        : "Your portfolio lives in your browser. The market proxy keeps any API key server-side and ships strict security headers.",
   },
 ];
 
