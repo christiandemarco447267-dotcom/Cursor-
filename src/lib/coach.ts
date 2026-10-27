@@ -40,6 +40,8 @@ export type CoachIntent =
   | "mood"
   | "diversification"
   | "benchmark"
+  | "advice"
+  | "position"
   | "help";
 
 export const SUGGESTED_QUESTIONS = [
@@ -72,6 +74,7 @@ const SECTOR_WORDS: [RegExp, Sector][] = [
 ];
 
 const INTENTS: [CoachIntent, RegExp][] = [
+  ["advice", /should i (buy|sell|hold|add|trim|dump)|is \S+ a good (buy|stock|investment)|recommend|what (stock|should i) (to )?buy/],
   ["discipline", /discipline|my score|\bscore\b/],
   ["biases", /bias|fomo|revenge|panic|emotion|overtrad|disposition/],
   ["mood", /mood|feel|feeling/],
@@ -80,7 +83,7 @@ const INTENTS: [CoachIntent, RegExp][] = [
   ["winner", /winner|best|top perform|biggest gain|doing well/],
   ["loser", /loser|worst|losing|biggest loss|down the most/],
   ["cash", /cash|dry powder|buying power|liquid/],
-  ["benchmark", /\bspy\b|s&p|benchmark|beat(ing)? the market|vs\.? market|outperform/],
+  ["benchmark", /\bspy\b|s&p|benchmark|beat(ing)? the market|vs\.? market|outperform|return|performance|how am i doing|how('s| is) my (portfolio|account)|\bp\/?l\b|profit/],
   ["diversification", /diversif|spread/],
   ["concentration", /heavy|concentrat|overweight|exposure|too much|sector|allocation|tech|energy|bank|financ/],
 ];
@@ -129,9 +132,22 @@ function concentrationReply(question: string, ctx: CoachContext): CoachReply {
   };
 }
 
+/** A held symbol named in the question ("how many shares of VTI do I own"), if any. */
+function mentionedHolding(question: string, summary: PortfolioSummary) {
+  const words = new Set(question.toUpperCase().match(/[A-Z][A-Z.]{0,11}/g) ?? []);
+  return summary.holdings.find((h) => words.has(h.symbol.toUpperCase()));
+}
+
+function positionLine(h: PortfolioSummary["holdings"][number], total: number): string {
+  const weight = total > 0 ? (h.marketValue / total) * 100 : 0;
+  return `You hold ${h.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${h.symbol} at an average cost of ${money(h.avgCost)}, worth ${money(h.marketValue)} (${pct(weight)} of your portfolio), ${h.gain >= 0 ? "up" : "down"} ${money(Math.abs(h.gain))} (${h.gainPercent >= 0 ? "+" : "−"}${Math.abs(h.gainPercent).toFixed(2)}%).`;
+}
+
 export function ruleBasedAnswer(question: string, ctx: CoachContext): CoachReply {
-  const intent = detectIntent(question);
+  const detected = detectIntent(question);
   const { state, summary } = ctx;
+  const held = mentionedHolding(question, summary);
+  const intent: CoachIntent = detected === "help" && held ? "position" : detected;
   const now = ctx.now ?? Date.now();
   switch (intent) {
     case "concentration":
@@ -248,10 +264,26 @@ export function ruleBasedAnswer(question: string, ctx: CoachContext): CoachReply
         links: [{ href: "/app/portfolio", label: "You vs. S&P 500" }],
       };
     }
+    case "advice":
+      return {
+        intent,
+        text: `I can't tell you what to buy or sell — Sentia is a practice tool, not an adviser. What I can do is help you test the idea: write a thesis, decide what would prove it wrong, and size it so one bad call can't sink the account.${held ? ` ${positionLine(held, summary.total)}` : ""}`,
+        links: [
+          { href: "/app/thesis", label: "Write a thesis" },
+          { href: "/app/time-machine", label: "Practise in the Time Machine" },
+        ],
+      };
+    case "position":
+      return {
+        intent,
+        text: held ? positionLine(held, summary.total) : "You don't hold that one right now.",
+        bullets: held ? [held.thesisId ? "It has a linked thesis." : "It has no linked thesis yet."] : [],
+        links: [{ href: "/app/portfolio", label: "Open Portfolio" }],
+      };
     default:
       return {
         intent: "help",
-        text: "I can answer questions about your paper account: sector concentration, cash, winners and losers, thesis coverage, biases, mood patterns and your Discipline Score. Try one of the suggestions.",
+        text: "I can answer questions about your paper account: sector concentration, cash, returns vs. the S&P 500, winners and losers, a holding by its ticker, thesis coverage, biases, mood patterns and your Discipline Score. Try one of the suggestions.",
       };
   }
 }

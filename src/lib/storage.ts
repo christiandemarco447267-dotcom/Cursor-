@@ -308,10 +308,10 @@ export function updateThesis(
     thesis.id === id
       ? {
           ...thesis,
-          ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
-          ...(patch.rationale !== undefined ? { rationale: patch.rationale.trim() } : {}),
-          ...(patch.risks !== undefined ? { risks: patch.risks.trim() } : {}),
-          ...(patch.conviction !== undefined ? { conviction: patch.conviction } : {}),
+          ...(patch.title !== undefined && patch.title.trim() ? { title: patch.title.trim().slice(0, 100) } : {}),
+          ...(patch.rationale !== undefined && patch.rationale.trim() ? { rationale: patch.rationale.trim().slice(0, 4000) } : {}),
+          ...(patch.risks !== undefined ? { risks: patch.risks.trim().slice(0, 2000) } : {}),
+          ...(patch.conviction !== undefined ? { conviction: Math.min(5, Math.max(1, Math.round(patch.conviction))) } : {}),
           updatedAt: nowIso(),
         }
       : thesis,
@@ -321,7 +321,11 @@ export function updateThesis(
 
 export function removeThesis(state: AppState, id: string): AppState {
   const holdings = state.holdings.map((h) => (h.thesisId === id ? { ...h, thesisId: undefined, updatedAt: nowIso() } : h));
-  return commit({ ...state, theses: state.theses.filter((t) => t.id !== id), holdings });
+  // Its stress-test exit alert goes with it (same rule as clearing the stress test:
+  // an alert still waiting is removed, a triggered one stays as history).
+  const alertId = state.theses.find((t) => t.id === id)?.stressTest?.alertId;
+  const alerts = alertId ? state.alerts.filter((a) => !(a.id === alertId && a.status === "active")) : state.alerts;
+  return commit({ ...state, theses: state.theses.filter((t) => t.id !== id), holdings, alerts });
 }
 
 export function linkHoldingToThesis(state: AppState, holdingId: string, thesisId: string | undefined): AppState {
@@ -479,7 +483,12 @@ export function loadStateFromString(raw: string | null): AppState {
 }
 
 export function importStateJson(raw: string): AppState {
-  const parsed: unknown = JSON.parse(raw);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("That file isn't valid JSON. Choose a Sentia backup (.json) exported from Settings.");
+  }
   const migrated = migrateUnknown(parsed);
   if (!migrated) throw new Error("This file is not a valid Sentia backup.");
   return migrated;

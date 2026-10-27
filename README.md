@@ -198,9 +198,11 @@ cp .env.example .env.local
   build on every pull request and on pushes to `main` (Node 22).
 - **Deploy** (`.github/workflows/deploy-pages.yml`) publishes a static export to GitHub Pages on
   every push to `main` (or manually via *Run workflow*).
-- The canonical site URL used for metadata, the sitemap, and social cards lives in
-  `src/lib/site.ts`. After a repo rename or custom domain, change it there (or set
-  `NEXT_PUBLIC_SITE_URL` at build time).
+- The base path and canonical site URL (metadata, OG/Twitter cards, sitemap, robots, manifest)
+  are derived at build time: the deploy workflow passes the Pages `base_path`/`base_url`
+  (falling back to `/<repo-name>`), and `src/lib/site.ts` falls back to
+  `https://<owner>.github.io/<repo>/` from the runner's `GITHUB_REPOSITORY*` variables. A repo
+  rename or custom domain needs no code change; set `NEXT_PUBLIC_SITE_URL` to override.
 
 ## Architecture
 

@@ -12,6 +12,7 @@ const ROUTES: { path: string; priority: number; changeFrequency: "weekly" | "mon
   { path: "/app/portfolio", priority: 0.7, changeFrequency: "weekly" },
   { path: "/app/trade", priority: 0.7, changeFrequency: "weekly" },
   { path: "/app/markets", priority: 0.7, changeFrequency: "weekly" },
+  { path: "/app/watchlist", priority: 0.6, changeFrequency: "weekly" },
   { path: "/app/allocate", priority: 0.6, changeFrequency: "weekly" },
   { path: "/app/thesis", priority: 0.6, changeFrequency: "weekly" },
   { path: "/app/insights", priority: 0.6, changeFrequency: "weekly" },

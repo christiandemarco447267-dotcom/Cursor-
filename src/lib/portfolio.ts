@@ -1,3 +1,4 @@
+import { formatCurrency, formatNumber } from "./format";
 import { nameForSymbol } from "./market";
 import type { AppState, Holding, Quote } from "./types";
 import { LIMITS, normalizeSymbol } from "./validation";
@@ -122,12 +123,13 @@ export function computeBuy(
   if (!Number.isFinite(input.shares) || input.shares <= 0) {
     throw new TradeError("Enter a positive number of shares.");
   }
-  if (!Number.isFinite(input.price) || input.price < 0 || input.price > LIMITS.maxPrice) {
-    throw new TradeError("Enter a valid price per share.");
+  // A fill at $0 would hand out free shares (buy) or throw them away (sell).
+  if (!Number.isFinite(input.price) || input.price <= 0 || input.price > LIMITS.maxPrice) {
+    throw new TradeError("Enter a price per share above $0.");
   }
   const cost = round2(input.shares * input.price);
   if (cost > state.cash + 1e-9) {
-    throw new TradeError(`Not enough cash. This buy costs ${cost.toFixed(2)} but only ${state.cash.toFixed(2)} is available.`);
+    throw new TradeError(`Not enough cash. This buy costs ${formatCurrency(cost)} but only ${formatCurrency(state.cash)} is available.`);
   }
 
   const holdings = [...state.holdings];
@@ -165,8 +167,9 @@ export function computeSell(
   if (!Number.isFinite(input.shares) || input.shares <= 0) {
     throw new TradeError("Enter a positive number of shares.");
   }
-  if (!Number.isFinite(input.price) || input.price < 0 || input.price > LIMITS.maxPrice) {
-    throw new TradeError("Enter a valid price per share.");
+  // A fill at $0 would hand out free shares (buy) or throw them away (sell).
+  if (!Number.isFinite(input.price) || input.price <= 0 || input.price > LIMITS.maxPrice) {
+    throw new TradeError("Enter a price per share above $0.");
   }
   const holdings = [...state.holdings];
   const index = holdings.findIndex((h) => normalizeSymbol(h.symbol) === symbol);
@@ -175,7 +178,7 @@ export function computeSell(
   }
   const existing = holdings[index];
   if (input.shares > existing.shares + 1e-9) {
-    throw new TradeError(`You only hold ${existing.shares} ${symbol}, cannot sell ${input.shares}.`);
+    throw new TradeError(`You only hold ${formatNumber(existing.shares)} ${symbol}, so you can't sell ${formatNumber(input.shares)}.`);
   }
 
   const proceeds = round2(input.shares * input.price);

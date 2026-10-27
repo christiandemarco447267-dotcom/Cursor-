@@ -18,6 +18,7 @@ const DAY = 86_400_000;
 
 export function holdLabel(ms: number): string {
   const days = ms / DAY;
+  if (ms < 3_600_000) return "under an hour";
   if (days < 1) {
     const hours = Math.max(1, Math.round(ms / 3_600_000));
     return `${hours} hour${hours === 1 ? "" : "s"}`;

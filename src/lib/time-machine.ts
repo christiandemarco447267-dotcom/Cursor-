@@ -3,6 +3,7 @@
 // main account's cash, holdings or ledger.
 import rawData from "../data/time-machine.json";
 import { maxDrawdownPct, type BenchmarkPoint } from "./benchmark";
+import { formatCurrency, formatNumber } from "./format";
 import { round2 } from "./portfolio";
 import { commit, newId, nowIso } from "./storage";
 import type { AppState, ReplayResult, ReplaySession, ReplayTrade } from "./types";
@@ -203,10 +204,10 @@ export function replayTrade(state: AppState, input: ReplayTradeInput): AppState 
   const book = replayBook(session, scenario);
   if (input.side === "buy") {
     const cost = round2(input.shares * price);
-    if (cost > book.cash + 1e-9) throw new Error(`Not enough cash: that costs $${cost.toFixed(2)} and you have $${book.cash.toFixed(2)}.`);
+    if (cost > book.cash + 1e-9) throw new Error(`Not enough cash: that costs ${formatCurrency(cost)} and you have ${formatCurrency(book.cash)}.`);
   } else {
     const pos = book.positions.find((p) => p.symbol === symbol);
-    if (!pos || input.shares > pos.shares + 1e-9) throw new Error(`You only hold ${pos?.shares ?? 0} ${symbol}.`);
+    if (!pos || input.shares > pos.shares + 1e-9) throw new Error(`You only hold ${formatNumber(pos?.shares ?? 0)} ${symbol}.`);
   }
   const trade: ReplayTrade = { day: session.dayIndex, side: input.side, symbol, shares: input.shares };
   return commit({ ...state, replay: { ...session, trades: [...session.trades, trade] } });

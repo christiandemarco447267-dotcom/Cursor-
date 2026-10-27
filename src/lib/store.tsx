@@ -469,10 +469,13 @@ const AppContext = createContext<AppApi | null>(null);
 
 const MAX_REQUEST_SYMBOLS = 20;
 
-/** Symbols to quote, most important first (the feed is capped at 20). */
-export function requestSymbols(state: AppState | null): string[] {
+/**
+ * Symbols to quote, most important first. The network feed is capped at 20; the
+ * local simulated feed has no cap, so every holding, order and alert gets a quote.
+ */
+export function requestSymbols(state: AppState | null, limit: number = MAX_REQUEST_SYMBOLS): string[] {
   const universe = DEMO_UNIVERSE.map((entry) => entry.symbol);
-  if (!state) return universe.slice(0, MAX_REQUEST_SYMBOLS);
+  if (!state) return universe.slice(0, limit);
   const held = portfolioSymbols(state);
   // Pending orders and active alerts must be quoted for the fill engine / alerts to work.
   const orderSymbols = state.orders.filter((o) => o.status === "open").map((o) => normalizeSymbol(o.symbol));
@@ -483,7 +486,7 @@ export function requestSymbols(state: AppState | null): string[] {
   const thesisSymbols = state.theses.map((t) => normalizeSymbol(t.symbol));
   return Array.from(
     new Set([BENCHMARK_SYMBOL, ...held, ...orderSymbols, ...alertSymbols, ...watched, ...thesisSymbols, ...universe]),
-  ).slice(0, MAX_REQUEST_SYMBOLS);
+  ).slice(0, limit);
 }
 
 export function AppProvider({ mode: storageMode, children }: { mode: StorageMode; children: React.ReactNode }) {
@@ -520,13 +523,14 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
     manualTourOpen || (Boolean(state) && Boolean(state?.profileSetupAt) && !state?.onboardedAt);
 
   const symbolsKey = requestSymbols(state).sort().join(",");
+  const allSymbolsKey = requestSymbols(state, Number.POSITIVE_INFINITY).sort().join(",");
 
   // setState lives inside the promise callbacks (not synchronously in an effect),
   // which is the pattern React recommends for syncing with an external system.
   const refreshMarket = useCallback(() => {
     const symbols = symbolsKey ? symbolsKey.split(",") : [];
     const simulate = () => {
-      const snapshot = demoSnapshot(symbols);
+      const snapshot = demoSnapshot(allSymbolsKey ? allSymbolsKey.split(",") : symbols);
       setMarket({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
     };
 
@@ -554,14 +558,18 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
         setMarket({ status: snapshot.status, quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
       })
       .catch(simulate);
-  }, [symbolsKey]);
+  }, [symbolsKey, allSymbolsKey]);
 
+  // Poll once state exists. Keyed on presence (not the state object) so ordinary
+  // edits don't refetch quotes and restart the 15s timer; a new symbol to quote
+  // changes refreshMarket and re-runs this effect.
+  const hasState = Boolean(state);
   useEffect(() => {
-    if (!state) return;
+    if (!hasState) return;
     refreshMarket();
     const id = setInterval(refreshMarket, MARKET_REFRESH_MS);
     return () => clearInterval(id);
-  }, [state, refreshMarket]);
+  }, [hasState, refreshMarket]);
 
   // Each price update (and each state change, e.g. a newly placed order) runs the
   // fill engine, price alerts and performance snapshotting. Idempotent: reads and
