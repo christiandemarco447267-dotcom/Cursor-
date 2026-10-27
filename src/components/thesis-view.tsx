@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { FlaskConical, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate, formatNumber, formatPercent, formatSignedCurrency } from "@/lib/format";
 import { nameForSymbol } from "@/lib/market";
 import { quoteMap, type HoldingValue } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { isValidSymbol, normalizeSymbol } from "@/lib/validation";
+import { StressTestForm, StressTestSummary } from "./stress-test-form";
 import { EmptyState, Loading, Panel, PageHeader, Sparkline } from "./ui";
 
 export function ThesisView() {
@@ -26,6 +27,7 @@ export function ThesisView() {
   const [risks, setRisks] = useState("");
   const [conviction, setConviction] = useState(3);
   const [error, setError] = useState("");
+  const [stressing, setStressing] = useState<string | null>(null);
 
   if (!ready || !state) return <Loading />;
 
@@ -82,6 +84,14 @@ export function ThesisView() {
                         {quote ? formatPercent(change, true) : "no quote"}
                       </span>
                     </div>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setStressing((cur) => (cur === thesis.id ? null : thesis.id))}
+                      aria-expanded={stressing === thesis.id}
+                      title="What would prove this wrong?"
+                    >
+                      <FlaskConical size={14} /> Stress test
+                    </button>
                     <button className="btn btn-sm btn-danger btn-icon" onClick={() => actions.removeThesis(thesis.id)} aria-label={`Delete thesis: ${thesis.title}`} title="Delete thesis">
                       <Trash2 size={14} />
                     </button>
@@ -111,6 +121,11 @@ export function ThesisView() {
 
                 <p className="muted small">{thesis.rationale}</p>
                 {thesis.risks ? <p className="small dim">Risks / invalidation: {thesis.risks}</p> : null}
+                {stressing === thesis.id ? (
+                  <StressTestForm thesis={thesis} onDone={() => setStressing(null)} />
+                ) : (
+                  <StressTestSummary thesis={thesis} />
+                )}
               </Panel>
             );
           })}

@@ -12,12 +12,25 @@ import {
 import { BENCHMARK_SYMBOL, DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./market";
 import * as alertOps from "./alerts";
 import * as orderOps from "./orders";
+import * as replayOps from "./time-machine";
+import * as stressOps from "./stress-test";
+import { celebrate } from "./celebrate";
 import { formatCurrency, formatNumber } from "./format";
 import { processMarketTick, type TickResult } from "./market-tick";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
 import { createInitialState, LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
-import { AppStateSchema, type AppState, type MarketSnapshot, type MarketStatus, type PriceAlert, type Quote } from "./types";
+import {
+  AppStateSchema,
+  type AppState,
+  type MarketSnapshot,
+  type MarketStatus,
+  type Mood,
+  type PriceAlert,
+  type Quote,
+  type ReplayResult,
+  type Settings,
+} from "./types";
 import { friendlyAuthError } from "./auth-helpers";
 import { AUTOSAVE_DEBOUNCE_MS, createDebouncedSaver, isRemoteNewer, type DebouncedSaver } from "./cloud-sync";
 import { loadCloudState, saveCloudState, watchCloudState } from "./cloud-store";
@@ -148,6 +161,27 @@ function pushToast(toast: Omit<Toast, "id">) {
   }
 }
 
+// ---- Celebrations -----------------------------------------------------------
+
+/** Confetti + haptics (per settings) with a matching toast. */
+export function celebrateNow(title: string, body: string) {
+  if (!current) return;
+  pushToast({ title, body, tone: "gain" });
+  celebrate(current.settings);
+}
+
+/** A profitable close of a position that was linked to a thesis deserves a moment. */
+function celebrateThesisWins(prev: AppState, next: AppState) {
+  if (next.transactions === prev.transactions) return;
+  const seen = new Set(prev.transactions.map((t) => t.id));
+  for (const tx of next.transactions) {
+    if (seen.has(tx.id) || tx.type !== "sell" || !tx.thesisId || !((tx.realizedGain ?? 0) > 0)) continue;
+    const thesis = next.theses.find((t) => t.id === tx.thesisId);
+    celebrateNow("Thesis paid off", `${tx.symbol} closed for a ${formatCurrency(tx.realizedGain ?? 0)} gain${thesis ? ` — “${thesis.title}”` : ""}.`);
+    break;
+  }
+}
+
 function alertText(alert: PriceAlert): string {
   return `${alert.symbol} ${alert.direction === "above" ? "rose above" : "fell below"} ${formatCurrency(alert.price)}`;
 }
@@ -174,8 +208,10 @@ function applyMarketTick(quotes: Quote[]) {
   if (!result.changed) return;
   const parsed = AppStateSchema.safeParse(result.state);
   if (!parsed.success) return; // never persist an invalid state; try again next tick
+  const prev = current;
   setCurrent(parsed.data);
   announceTick(result);
+  celebrateThesisWins(prev, parsed.data);
 }
 
 const SERVER_SYNC: SyncState = { mode: null, status: "local" };
@@ -343,7 +379,24 @@ function mutate(fn: (state: AppState) => AppState) {
   if (!parsed.success) {
     throw new Error("That action was cancelled because it would exceed allowed limits.");
   }
+  const prev = current;
   setCurrent(parsed.data);
+  celebrateThesisWins(prev, parsed.data);
+}
+
+/** Advance the Time Machine; records the result and celebrates beating SPY at the end. */
+function stepReplay(by: number | "end"): ReplayResult | null {
+  let finished: ReplayResult | null = null;
+  mutate((s) => {
+    const r = replayOps.stepReplay(s, by);
+    finished = r.finished;
+    return r.state;
+  });
+  const done = finished as ReplayResult | null;
+  if (done && done.returnPct > done.spyReturnPct) {
+    celebrateNow("You beat the S&P 500", `Replay return ${done.returnPct.toFixed(1)}% vs SPY ${done.spyReturnPct.toFixed(1)}%.`);
+  }
+  return done;
 }
 
 // ---- Market -------------------------------------------------------------
@@ -376,8 +429,8 @@ export type AppApi = {
   toasts: Toast[];
   dismissToast: (id: number) => void;
   actions: {
-    buy: (input: { symbol: string; shares: number; price: number }) => void;
-    sell: (input: { symbol: string; shares: number; price: number }) => void;
+    buy: (input: TradeInput) => void;
+    sell: (input: TradeInput) => void;
     placeOrder: (input: orderOps.OrderInput) => void;
     cancelOrder: (id: string) => void;
     clearClosedOrders: () => void;
@@ -396,8 +449,21 @@ export type AppApi = {
     reset: () => void;
     importJson: (raw: string) => void;
     exportJson: () => string;
+    // v4
+    updateSettings: (patch: Partial<Settings>) => void;
+    recordDisciplineMilestone: (milestone: number) => void;
+    setStressTest: (thesisId: string, input: stressOps.StressTestInput) => void;
+    clearStressTest: (thesisId: string) => void;
+    startReplay: (scenarioId: string) => void;
+    replayTrade: (input: replayOps.ReplayTradeInput) => void;
+    stepReplay: (by: number | "end") => ReplayResult | null;
+    endReplay: () => void;
+    rememberLeague: (code: string) => void;
+    forgetLeague: (code: string) => void;
   };
 };
+
+export type TradeInput = { symbol: string; shares: number; price: number; mood?: Mood; dayChange?: number };
 
 const AppContext = createContext<AppApi | null>(null);
 
@@ -509,8 +575,8 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
 
   const actions = useMemo<AppApi["actions"]>(
     () => ({
-      buy: (input) => mutate((s) => mutations.buy(s, input)),
-      sell: (input) => mutate((s) => mutations.sell(s, input)),
+      buy: ({ mood, dayChange, ...input }) => mutate((s) => mutations.buy(s, input, "", { mood, dayChange })),
+      sell: ({ mood, dayChange, ...input }) => mutate((s) => mutations.sell(s, input, "", { mood, dayChange })),
       placeOrder: (input) => mutate((s) => orderOps.placeOrder(s, input)),
       cancelOrder: (id) => mutate((s) => orderOps.cancelOrder(s, id)),
       clearClosedOrders: () => mutate((s) => orderOps.clearClosedOrders(s)),
@@ -529,6 +595,16 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
       reset: () => setCurrent(mutations.createInitialState()),
       importJson: (raw) => setCurrent(mutations.importStateJson(raw)),
       exportJson: () => (current ? mutations.exportStateJson(current) : "{}"),
+      updateSettings: (patch) => mutate((s) => mutations.updateSettings(s, patch)),
+      recordDisciplineMilestone: (m) => mutate((s) => mutations.recordDisciplineMilestone(s, m)),
+      setStressTest: (thesisId, input) => mutate((s) => stressOps.setStressTest(s, thesisId, input)),
+      clearStressTest: (thesisId) => mutate((s) => stressOps.clearStressTest(s, thesisId)),
+      startReplay: (scenarioId) => mutate((s) => replayOps.startReplay(s, scenarioId)),
+      replayTrade: (input) => mutate((s) => replayOps.replayTrade(s, input)),
+      stepReplay,
+      endReplay: () => mutate((s) => replayOps.endReplay(s)),
+      rememberLeague: (code) => mutate((s) => mutations.rememberLeague(s, code)),
+      forgetLeague: (code) => mutate((s) => mutations.forgetLeague(s, code)),
     }),
     [],
   );

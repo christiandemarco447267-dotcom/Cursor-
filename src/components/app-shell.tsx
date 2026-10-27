@@ -7,7 +7,11 @@ import {
   ArrowLeftRight,
   Cloud,
   CloudAlert,
+  History,
   Home,
+  Landmark,
+  MessageCircle,
+  Trophy,
   MonitorSmartphone,
   Lightbulb,
   LineChart,
@@ -29,6 +33,7 @@ import { experienceLabel, initialsOf } from "@/lib/profile";
 import { OnboardingTour } from "./onboarding-tour";
 import { DemoPricesBadge, Loading, ToastHost } from "./ui";
 import { ProfileSetup } from "./profile-setup";
+import { DisciplineWatcher } from "./discipline-card";
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ size?: number }>; section: string };
 
@@ -41,10 +46,14 @@ const NAV: NavItem[] = [
   { href: "/app/allocate", label: "Allocation", icon: PieChart, section: "Overview" },
   { href: "/app/thesis", label: "Theses", icon: NotebookPen, section: "Process" },
   { href: "/app/insights", label: "Insights", icon: Lightbulb, section: "Process" },
-  { href: "/app/settings", label: "Settings", icon: Settings, section: "Process" },
+  { href: "/app/coach", label: "Ask Sentia", icon: MessageCircle, section: "Process" },
+  { href: "/app/legends", label: "Legends", icon: Landmark, section: "Process" },
+  { href: "/app/time-machine", label: "Time Machine", icon: History, section: "Practice" },
+  { href: "/app/leagues", label: "Leagues", icon: Trophy, section: "Practice" },
+  { href: "/app/settings", label: "Settings", icon: Settings, section: "Practice" },
 ];
 
-const SECTIONS = ["Overview", "Process"] as const;
+const SECTIONS = ["Overview", "Process", "Practice"] as const;
 
 function useIsActive() {
   const pathname = usePathname();
@@ -294,6 +303,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <ProfileSetup />
       <OnboardingTour />
       <ToastHost />
+      <DisciplineWatcher />
     </>
   );
 }

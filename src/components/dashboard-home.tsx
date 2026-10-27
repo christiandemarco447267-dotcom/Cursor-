@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, ArrowRight, ArrowUpRight, Lightbulb, LineChart, PieChart, RefreshCw } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, History, Lightbulb, LineChart, MessageCircle, PieChart, RefreshCw } from "lucide-react";
 import { formatCurrency, formatPercent, formatSignedCurrency } from "@/lib/format";
 import { realizedPnl } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { BenchmarkCard } from "./benchmark-chart";
+import { DisciplineCard } from "./discipline-card";
 import { Loading, Panel } from "./ui";
 
 function greeting(): string {
@@ -105,6 +106,8 @@ export function DashboardHome() {
         </Link>
       </Panel>
 
+      <DisciplineCard compact />
+
       <BenchmarkCard />
 
       <div className="grid grid-2">
@@ -131,6 +134,18 @@ export function DashboardHome() {
           icon={<Lightbulb size={18} />}
           title="Insights"
           body="Coaching tuned to your current portfolio."
+        />
+        <QuickLink
+          href="/app/time-machine"
+          icon={<History size={18} />}
+          title="Time Machine"
+          body="Replay the COVID crash, 2008 or 2021 with real prices."
+        />
+        <QuickLink
+          href="/app/coach"
+          icon={<MessageCircle size={18} />}
+          title="Ask Sentia"
+          body="Questions about your book, answered from your data."
         />
       </div>
 
