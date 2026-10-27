@@ -41,7 +41,7 @@ export function LegendsView() {
           </span>
         </div>
         <span className="muted small">{legend.description}</span>
-        <div className="bench-stats" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+        <div className="bench-stats bench-stats-4">
           <Mini label="Overlap with you" value={hasHoldings ? `${comparison.overlapPct.toFixed(0)}%` : "—"} hint="Σ of the smaller weight per shared stock" />
           <Mini label="Shared holdings" value={String(comparison.shared.length)} hint={comparison.shared.map((s) => s.symbol).join(", ") || "None"} />
           <Mini label="Top position" value={`You ${comparison.you.top1.toFixed(0)}% · ${comparison.legend.top1.toFixed(0)}%`} hint="Largest single weight" />
@@ -139,7 +139,7 @@ function Mini({ label, value, hint }: { label: string; value: string; hint?: str
     <div className="bench-stat stack" style={{ gap: 2 }}>
       <span className="eyebrow">{label}</span>
       <strong className="value-lg">{value}</strong>
-      {hint ? <span className="small dim truncate" title={hint}>{hint}</span> : null}
+      {hint ? <span className="small dim">{hint}</span> : null}
     </div>
   );
 }

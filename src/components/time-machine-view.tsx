@@ -272,7 +272,7 @@ function ReportCardPanel({ card }: { card: ReturnType<typeof reportCard> }) {
       </div>
       <div className="row wrap gap-lg" style={{ alignItems: "center" }}>
         <Gauge score={card.processScore} label="Replay discipline" />
-        <div className="bench-stats grow" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+        <div className="bench-stats bench-stats-2" style={{ flex: "1 1 260px", minWidth: 0 }}>
           <Mini label="Your return" value={formatPercent(card.returnPct, true)} tone={card.returnPct >= 0 ? "gain" : "loss"} />
           <Mini label="SPY return" value={formatPercent(card.spyReturnPct, true)} tone={card.spyReturnPct >= 0 ? "gain" : "loss"} />
           <Mini label="Your max drawdown" value={`−${card.maxDrawdownPct.toFixed(1)}%`} tone="loss" />

@@ -86,40 +86,42 @@ export function ThesisView() {
                         {quote ? formatPercent(change, true) : "no quote"}
                       </span>
                     </div>
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => {
-                        setEditing(null);
-                        setStressing((cur) => (cur === thesis.id ? null : thesis.id));
-                      }}
-                      aria-expanded={stressing === thesis.id}
-                      title="What would prove this wrong?"
-                    >
-                      <FlaskConical size={14} /> Stress test
-                    </button>
-                    <button
-                      className="btn btn-sm btn-icon"
-                      onClick={() => {
-                        setStressing(null);
-                        setEditing((cur) => (cur === thesis.id ? null : thesis.id));
-                      }}
-                      aria-expanded={editing === thesis.id}
-                      aria-label={`Edit thesis: ${thesis.title}`}
-                      title="Edit thesis"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger btn-icon"
-                      onClick={() => {
-                        const extra = thesis.stressTest?.alertId ? " Its stress-test price alert will be removed too." : "";
-                        if (confirm(`Delete the thesis “${thesis.title}”? This can't be undone.${extra}`)) actions.removeThesis(thesis.id);
-                      }}
-                      aria-label={`Delete thesis: ${thesis.title}`}
-                      title="Delete thesis"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="row gap-sm" style={{ alignItems: "center" }}>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          setEditing(null);
+                          setStressing((cur) => (cur === thesis.id ? null : thesis.id));
+                        }}
+                        aria-expanded={stressing === thesis.id}
+                        title="What would prove this wrong?"
+                      >
+                        <FlaskConical size={14} /> Stress test
+                      </button>
+                      <button
+                        className="btn btn-sm btn-icon"
+                        onClick={() => {
+                          setStressing(null);
+                          setEditing((cur) => (cur === thesis.id ? null : thesis.id));
+                        }}
+                        aria-expanded={editing === thesis.id}
+                        aria-label={`Edit thesis: ${thesis.title}`}
+                        title="Edit thesis"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger btn-icon"
+                        onClick={() => {
+                          const extra = thesis.stressTest?.alertId ? " Its stress-test price alert will be removed too." : "";
+                          if (confirm(`Delete the thesis “${thesis.title}”? This can't be undone.${extra}`)) actions.removeThesis(thesis.id);
+                        }}
+                        aria-label={`Delete thesis: ${thesis.title}`}
+                        title="Delete thesis"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
