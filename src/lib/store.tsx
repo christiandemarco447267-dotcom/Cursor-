@@ -9,11 +9,15 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./market";
+import { BENCHMARK_SYMBOL, DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./market";
+import * as alertOps from "./alerts";
+import * as orderOps from "./orders";
+import { formatCurrency, formatNumber } from "./format";
+import { processMarketTick, type TickResult } from "./market-tick";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
 import { createInitialState, LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
-import { AppStateSchema, type AppState, type MarketSnapshot, type MarketStatus, type Quote } from "./types";
+import { AppStateSchema, type AppState, type MarketSnapshot, type MarketStatus, type PriceAlert, type Quote } from "./types";
 import { friendlyAuthError } from "./auth-helpers";
 import { AUTOSAVE_DEBOUNCE_MS, createDebouncedSaver, isRemoteNewer, type DebouncedSaver } from "./cloud-sync";
 import { loadCloudState, saveCloudState, watchCloudState } from "./cloud-store";
@@ -102,6 +106,76 @@ function getServerSnapshot(): AppState | null {
 
 function getSyncSnapshot(): SyncState {
   return sync;
+}
+
+// ---- Toasts (order fills, price alerts) ------------------------------------
+
+export type ToastTone = "gain" | "loss" | "info";
+export type Toast = { id: number; title: string; body: string; tone: ToastTone };
+
+let toasts: Toast[] = [];
+let toastSeq = 0;
+const TOAST_TTL_MS = 9_000;
+const MAX_TOASTS = 4;
+const NO_TOASTS: Toast[] = [];
+
+function getToastsSnapshot(): Toast[] {
+  return toasts;
+}
+function getServerToastsSnapshot(): Toast[] {
+  return NO_TOASTS;
+}
+
+export function dismissToast(id: number) {
+  if (!toasts.some((t) => t.id === id)) return;
+  toasts = toasts.filter((t) => t.id !== id);
+  emit();
+}
+
+function pushToast(toast: Omit<Toast, "id">) {
+  toastSeq += 1;
+  const id = toastSeq;
+  toasts = [...toasts, { ...toast, id }].slice(-MAX_TOASTS);
+  emit();
+  setTimeout(() => dismissToast(id), TOAST_TTL_MS);
+  // Mirror to a system notification when the user granted permission (best-effort).
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      new Notification(toast.title, { body: toast.body, tag: `sentia-${id}` });
+    }
+  } catch {
+    // Some mobile browsers only allow notifications from a service worker; the in-app toast still shows.
+  }
+}
+
+function alertText(alert: PriceAlert): string {
+  return `${alert.symbol} ${alert.direction === "above" ? "rose above" : "fell below"} ${formatCurrency(alert.price)}`;
+}
+
+function announceTick(result: TickResult) {
+  for (const fill of result.fills) {
+    const { order } = fill;
+    const what = `${orderOps.orderLabel(order)} · ${formatNumber(order.shares)} ${order.symbol}`;
+    if (fill.kind === "filled") {
+      pushToast({ title: "Order filled", body: `${what} filled at ${formatCurrency(fill.price)}.`, tone: "gain" });
+    } else {
+      pushToast({ title: "Order rejected", body: `${what}: ${fill.reason}`, tone: "loss" });
+    }
+  }
+  for (const { alert, price } of result.alerts) {
+    pushToast({ title: "Price alert", body: `${alertText(alert)} (now ${formatCurrency(price)}).`, tone: "info" });
+  }
+}
+
+/** Run the fill engine, alerts and snapshotting against the newest quotes. */
+function applyMarketTick(quotes: Quote[]) {
+  if (!current || quotes.length === 0) return;
+  const result = processMarketTick(current, quotes, Date.now());
+  if (!result.changed) return;
+  const parsed = AppStateSchema.safeParse(result.state);
+  if (!parsed.success) return; // never persist an invalid state; try again next tick
+  setCurrent(parsed.data);
+  announceTick(result);
 }
 
 const SERVER_SYNC: SyncState = { mode: null, status: "local" };
@@ -298,9 +372,18 @@ export type AppApi = {
   openProfileSetup: () => void;
   closeProfileSetup: () => void;
   refreshMarket: () => void;
+  /** In-app notifications for order fills and price alerts. */
+  toasts: Toast[];
+  dismissToast: (id: number) => void;
   actions: {
     buy: (input: { symbol: string; shares: number; price: number }) => void;
     sell: (input: { symbol: string; shares: number; price: number }) => void;
+    placeOrder: (input: orderOps.OrderInput) => void;
+    cancelOrder: (id: string) => void;
+    clearClosedOrders: () => void;
+    toggleWatch: (symbol: string) => void;
+    addAlert: (input: alertOps.AlertInput) => void;
+    removeAlert: (id: string) => void;
     deposit: (amount: number, note?: string) => void;
     withdraw: (amount: number, note?: string) => void;
     addThesis: (input: { symbol: string; title: string; rationale: string; risks?: string; conviction?: number }) => void;
@@ -318,18 +401,29 @@ export type AppApi = {
 
 const AppContext = createContext<AppApi | null>(null);
 
-function requestSymbols(state: AppState | null): string[] {
+const MAX_REQUEST_SYMBOLS = 20;
+
+/** Symbols to quote, most important first (the feed is capped at 20). */
+export function requestSymbols(state: AppState | null): string[] {
   const universe = DEMO_UNIVERSE.map((entry) => entry.symbol);
-  const held = state ? portfolioSymbols(state) : [];
+  if (!state) return universe.slice(0, MAX_REQUEST_SYMBOLS);
+  const held = portfolioSymbols(state);
+  // Pending orders and active alerts must be quoted for the fill engine / alerts to work.
+  const orderSymbols = state.orders.filter((o) => o.status === "open").map((o) => normalizeSymbol(o.symbol));
+  const alertSymbols = state.alerts.filter((a) => a.status === "active").map((a) => normalizeSymbol(a.symbol));
+  const watched = state.watchlist.map(normalizeSymbol);
   // Include thesis symbols so the market API returns a quote for every thesis,
   // even one written about a ticker that isn't currently held.
-  const thesisSymbols = state ? state.theses.map((t) => normalizeSymbol(t.symbol)) : [];
-  return Array.from(new Set([...held, ...thesisSymbols, ...universe])).slice(0, 20);
+  const thesisSymbols = state.theses.map((t) => normalizeSymbol(t.symbol));
+  return Array.from(
+    new Set([BENCHMARK_SYMBOL, ...held, ...orderSymbols, ...alertSymbols, ...watched, ...thesisSymbols, ...universe]),
+  ).slice(0, MAX_REQUEST_SYMBOLS);
 }
 
 export function AppProvider({ mode: storageMode, children }: { mode: StorageMode; children: React.ReactNode }) {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const syncState = useSyncExternalStore(subscribe, getSyncSnapshot, getServerSyncSnapshot);
+  const toastList = useSyncExternalStore(subscribe, getToastsSnapshot, getServerToastsSnapshot);
   const [market, setMarket] = useState<MarketState>({ status: "loading", quotes: [] });
   const [manualTourOpen, setManualTourOpen] = useState(false);
   const [manualProfileOpen, setManualProfileOpen] = useState(false);
@@ -403,12 +497,26 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
     return () => clearInterval(id);
   }, [state, refreshMarket]);
 
+  // Each price update (and each state change, e.g. a newly placed order) runs the
+  // fill engine, price alerts and performance snapshotting. Idempotent: reads and
+  // writes the module store, so a re-run with the same quotes is a no-op.
+  useEffect(() => {
+    if (!state || market.quotes.length === 0) return;
+    applyMarketTick(market.quotes);
+  }, [state, market.quotes]);
+
   const summary = useMemo(() => (state ? summarizePortfolio(state, market.quotes) : null), [state, market.quotes]);
 
   const actions = useMemo<AppApi["actions"]>(
     () => ({
       buy: (input) => mutate((s) => mutations.buy(s, input)),
       sell: (input) => mutate((s) => mutations.sell(s, input)),
+      placeOrder: (input) => mutate((s) => orderOps.placeOrder(s, input)),
+      cancelOrder: (id) => mutate((s) => orderOps.cancelOrder(s, id)),
+      clearClosedOrders: () => mutate((s) => orderOps.clearClosedOrders(s)),
+      toggleWatch: (symbol) => mutate((s) => alertOps.toggleWatch(s, symbol)),
+      addAlert: (input) => mutate((s) => alertOps.addAlert(s, input)),
+      removeAlert: (id) => mutate((s) => alertOps.removeAlert(s, id)),
       deposit: (amount, note) => mutate((s) => mutations.deposit(s, amount, note)),
       withdraw: (amount, note) => mutate((s) => mutations.withdraw(s, amount, note)),
       addThesis: (input) => mutate((s) => mutations.addThesis(s, input)),
@@ -439,6 +547,8 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
     openProfileSetup: () => setManualProfileOpen(true),
     closeProfileSetup: () => setManualProfileOpen(false),
     refreshMarket: () => void refreshMarket(),
+    toasts: toastList,
+    dismissToast,
     actions,
   };
 

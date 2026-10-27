@@ -8,7 +8,7 @@ import { DEMO_UNIVERSE, nameForSymbol, priceSourceOf } from "@/lib/market";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { normalizeSymbol } from "@/lib/validation";
-import { DemoPricesBadge, Loading, Panel, PageHeader, Sparkline } from "./ui";
+import { DemoPricesBadge, Loading, Panel, PageHeader, Sparkline, StarButton } from "./ui";
 
 export function MarketsView() {
   const { ready, state, quotes, market, refreshMarket } = useApp();
@@ -36,7 +36,7 @@ export function MarketsView() {
     <div className="stack gap-lg animate-in">
       <PageHeader
         title="Markets"
-        subtitle="Prices for the demo universe plus anything you hold."
+        subtitle="Prices for the demo universe plus anything you hold. Star a ticker to add it to your Watchlist."
         action={
           <button className="btn btn-sm" onClick={refreshMarket}>
             <RefreshCw size={15} /> Refresh
@@ -75,13 +75,16 @@ export function MarketsView() {
                   <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
                   <span className={`small ${change >= 0 ? "gain" : "loss"}`}>{formatPercent(change, true)}</span>
                 </div>
-                <Link
-                  href={`/app/trade?symbol=${encodeURIComponent(symbol)}`}
-                  className="btn btn-sm"
-                  aria-label={`Trade ${symbol}`}
-                >
-                  Trade
-                </Link>
+                <div className="row gap-sm">
+                  <StarButton symbol={symbol} />
+                  <Link
+                    href={`/app/trade?symbol=${encodeURIComponent(symbol)}`}
+                    className="btn btn-sm"
+                    aria-label={`Trade ${symbol}`}
+                  >
+                    Trade
+                  </Link>
+                </div>
               </div>
             );
           })}

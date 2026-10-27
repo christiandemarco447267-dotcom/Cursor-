@@ -2,15 +2,37 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Clock3, X } from "lucide-react";
 import { formatCurrency, formatNumber, formatRelativeDay } from "@/lib/format";
 import { DEMO_UNIVERSE, nameForSymbol } from "@/lib/market";
+import { orderCondition, orderLabel } from "@/lib/orders";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { isValidSymbol, normalizeSymbol, parseAmount } from "@/lib/validation";
-import { EmptyState, Loading, Panel, PageHeader } from "./ui";
+import type { PendingOrder } from "@/lib/types";
+import { EmptyState, Loading, Panel, PageHeader, StarButton } from "./ui";
 
 type Mode = "buy" | "sell";
+type OrderKind = "market" | "limit" | "stop";
+
+const ORDER_KINDS: { key: OrderKind; label: string }[] = [
+  { key: "market", label: "Market" },
+  { key: "limit", label: "Limit" },
+  { key: "stop", label: "Stop" },
+];
+
+/** One-line explanation of what the selected order does. */
+function orderHelp(mode: Mode, kind: OrderKind): string {
+  if (kind === "market") return mode === "buy" ? "Buys now at the price you enter." : "Sells now at the price you enter.";
+  if (kind === "limit") {
+    return mode === "buy"
+      ? "Buy limit: waits, then buys once the price falls to your limit or lower."
+      : "Sell limit: waits, then sells once the price rises to your limit or higher.";
+  }
+  return mode === "buy"
+    ? "Buy stop: waits, then buys once the price rises to your stop or higher (e.g. to catch a breakout)."
+    : "Sell stop: waits, then sells once the price falls to your stop or lower (a stop-loss).";
+}
 
 export function TradeView() {
   const { ready, state, quotes, actions } = useApp();
@@ -18,6 +40,7 @@ export function TradeView() {
   const initialSymbol = searchParams.get("symbol") ?? "";
 
   const [mode, setMode] = useState<Mode>("buy");
+  const [kind, setKind] = useState<OrderKind>("market");
   const [symbol, setSymbol] = useState(initialSymbol.toUpperCase());
   const [shares, setShares] = useState("");
   const [price, setPrice] = useState("");
@@ -57,6 +80,23 @@ export function TradeView() {
       return;
     }
 
+    if (kind !== "market") {
+      if (priceNum <= 0) {
+        setError(`Enter a ${kind} price above $0.`);
+        return;
+      }
+      try {
+        actions.placeOrder({ symbol: normalized, side: mode, type: kind, shares: sharesNum, triggerPrice: priceNum });
+        setNotice(
+          `${orderLabel({ side: mode, type: kind })} order placed: ${formatNumber(sharesNum)} ${normalized}, ${orderCondition({ side: mode, type: kind, triggerPrice: priceNum })}.`,
+        );
+        setShares("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Order could not be placed.");
+      }
+      return;
+    }
+
     try {
       if (mode === "buy") {
         actions.buy({ symbol: normalized, shares: sharesNum, price: priceNum });
@@ -72,6 +112,9 @@ export function TradeView() {
   };
 
   const recent = [...state.transactions].slice(-8).reverse();
+  const openOrders = state.orders.filter((o) => o.status === "open").reverse();
+  const closedOrders = state.orders.filter((o) => o.status !== "open").slice(-6).reverse();
+  const priceLabel = kind === "market" ? "Price / share" : kind === "limit" ? "Limit price" : "Stop price";
 
   return (
     <div className="stack gap-lg animate-in">
@@ -100,9 +143,27 @@ export function TradeView() {
             <span className="pill">Cash {formatCurrency(state.cash)}</span>
           </div>
 
+          <div className="segmented" role="group" aria-label="Order type">
+            {ORDER_KINDS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={kind === option.key ? "active" : ""}
+                onClick={() => setKind(option.key)}
+                aria-pressed={kind === option.key}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <span className="small muted" style={{ marginTop: -6 }}>
+            {orderHelp(mode, kind)}
+          </span>
+
           <form className="stack gap-md" onSubmit={submit}>
             <div className="field">
               <label htmlFor="symbol">Symbol</label>
+              <div className="row gap-sm">
               <input
                 id="symbol"
                 className="input"
@@ -114,6 +175,8 @@ export function TradeView() {
                 autoComplete="off"
                 aria-describedby={normalized ? "symbol-name" : undefined}
               />
+              {isValidSymbol(normalized) ? <StarButton symbol={normalized} /> : null}
+              </div>
               <datalist id="symbol-options">
                 {DEMO_UNIVERSE.map((entry) => (
                   <option key={entry.symbol} value={entry.symbol}>
@@ -146,7 +209,7 @@ export function TradeView() {
                 ) : null}
               </div>
               <div className="field">
-                <label htmlFor="price">Price / share</label>
+                <label htmlFor="price">{priceLabel}</label>
                 <input
                   id="price"
                   className="input"
@@ -157,7 +220,7 @@ export function TradeView() {
                 />
                 {quote ? (
                   <button type="button" className="small dim" style={{ textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={useMarketPrice}>
-                    Market {formatCurrency(quote.price)} — use it
+                    Market {formatCurrency(quote.price)}{kind === "market" ? " — use it" : " — start from it"}
                   </button>
                 ) : null}
               </div>
@@ -165,7 +228,9 @@ export function TradeView() {
 
             {estimated !== null ? (
               <div className="row between">
-                <span className="muted small">Estimated {mode === "buy" ? "cost" : "proceeds"}</span>
+                <span className="muted small">
+                  {kind === "market" ? "Estimated" : `At your ${kind} price, est.`} {mode === "buy" ? "cost" : "proceeds"}
+                </span>
                 <strong>{formatCurrency(estimated)}</strong>
               </div>
             ) : null}
@@ -180,7 +245,11 @@ export function TradeView() {
             </div>
 
             <button type="submit" className="btn btn-primary btn-block">
-              {mode === "buy" ? "Buy shares" : "Sell shares"}
+              {kind === "market"
+                ? mode === "buy"
+                  ? "Buy shares"
+                  : "Sell shares"
+                : `Place ${orderLabel({ side: mode, type: kind }).toLowerCase()} order`}
             </button>
           </form>
         </Panel>
@@ -200,13 +269,20 @@ export function TradeView() {
                     <div className="row between">
                       <strong>
                         {tx.symbol ?? "Cash"}
-                        {tx.shares && tx.price ? ` · ${formatNumber(tx.shares)} @ ${formatCurrency(tx.price)}` : ""}
+                        {tx.type !== "order" && tx.shares && tx.price ? ` · ${formatNumber(tx.shares)} @ ${formatCurrency(tx.price)}` : ""}
                       </strong>
-                      <span className={tx.type === "sell" || tx.type === "deposit" ? "gain" : ""}>
-                        {tx.type === "buy" || tx.type === "withdraw" ? "−" : "+"}
-                        {formatCurrency(tx.amount)}
-                      </span>
+                      {tx.type === "order" ? (
+                        <span className="small loss">No fill</span>
+                      ) : (
+                        <span className={tx.type === "sell" || tx.type === "deposit" ? "gain" : ""}>
+                          {tx.type === "buy" || tx.type === "withdraw" ? "−" : "+"}
+                          {formatCurrency(tx.amount)}
+                        </span>
+                      )}
                     </div>
+                    {tx.note && tx.note !== "Opening position" && tx.note !== "Starting balance" ? (
+                      <span className="small muted">{tx.note}</span>
+                    ) : null}
                     <div className="row between small dim">
                       <span>{formatRelativeDay(tx.createdAt)}</span>
                       {tx.realizedGain !== undefined ? (
@@ -222,6 +298,76 @@ export function TradeView() {
           )}
         </Panel>
       </div>
+
+      <Panel className="stack gap-md" >
+        <div className="row between wrap gap-sm">
+          <strong className="row gap-sm">
+            <Clock3 size={17} /> Open orders
+            {openOrders.length ? <span className="pill pill-primary pill-compact">{openOrders.length}</span> : null}
+          </strong>
+          <span className="small muted">Checked on every price update while Sentia is open.</span>
+        </div>
+        {openOrders.length === 0 ? (
+          <EmptyState title="No open orders" hint="Choose Limit or Stop above to place an order that waits for your price." />
+        ) : (
+          <div className="list">
+            {openOrders.map((order) => (
+              <OrderRow key={order.id} order={order} price={prices.get(order.symbol)?.price} onCancel={() => actions.cancelOrder(order.id)} />
+            ))}
+          </div>
+        )}
+        {closedOrders.length ? (
+          <>
+            <div className="row between wrap gap-sm" style={{ marginTop: 4 }}>
+              <span className="eyebrow">Recent order history</span>
+              <button type="button" className="btn btn-sm" onClick={actions.clearClosedOrders}>
+                Clear history
+              </button>
+            </div>
+            <div className="list">
+              {closedOrders.map((order) => (
+                <OrderRow key={order.id} order={order} />
+              ))}
+            </div>
+          </>
+        ) : null}
+      </Panel>
+    </div>
+  );
+}
+
+const STATUS_CLASS: Record<PendingOrder["status"], string> = {
+  open: "pill-primary",
+  filled: "pill-accent",
+  cancelled: "",
+  rejected: "pill-loss",
+};
+
+function OrderRow({ order, price, onCancel }: { order: PendingOrder; price?: number; onCancel?: () => void }) {
+  const detail =
+    order.status === "filled" && order.fillPrice !== undefined
+      ? `Filled at ${formatCurrency(order.fillPrice)} · ${formatRelativeDay(order.filledAt ?? order.updatedAt)}`
+      : order.status === "rejected"
+        ? `Rejected: ${order.reason ?? "could not fill"}`
+        : order.status === "cancelled"
+          ? `Cancelled · ${formatRelativeDay(order.updatedAt)}`
+          : `${orderCondition(order)}${price !== undefined ? ` · now ${formatCurrency(price)}` : ""}`;
+  return (
+    <div className="list-row">
+      <span className={`pill ${STATUS_CLASS[order.status]}`} style={{ minWidth: 86, justifyContent: "center", textTransform: "capitalize" }}>
+        {order.status}
+      </span>
+      <div className="grow stack" style={{ gap: 2, minWidth: 0 }}>
+        <strong>
+          {orderLabel(order)} · {formatNumber(order.shares)} {order.symbol} @ {formatCurrency(order.triggerPrice)}
+        </strong>
+        <span className="small dim">{detail}</span>
+      </div>
+      {onCancel ? (
+        <button type="button" className="btn btn-sm btn-danger" onClick={onCancel} aria-label={`Cancel ${orderLabel(order)} order for ${order.symbol}`}>
+          <X size={14} /> Cancel
+        </button>
+      ) : null}
     </div>
   );
 }

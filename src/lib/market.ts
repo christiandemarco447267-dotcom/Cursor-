@@ -6,6 +6,7 @@ export type UniverseEntry = { symbol: string; name: string; base: number };
 // A small, stable demo universe. `base` seeds deterministic demo pricing.
 export const DEMO_UNIVERSE: UniverseEntry[] = [
   { symbol: "VTI", name: "Vanguard Total Stock Market ETF", base: 246 },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF Trust", base: 492 },
   { symbol: "VOO", name: "Vanguard S&P 500 ETF", base: 452 },
   { symbol: "VXUS", name: "Vanguard Total International Stock ETF", base: 59 },
   { symbol: "BND", name: "Vanguard Total Bond Market ETF", base: 72 },
@@ -16,6 +17,9 @@ export const DEMO_UNIVERSE: UniverseEntry[] = [
   { symbol: "NVDA", name: "NVIDIA Corporation", base: 124 },
   { symbol: "SCHD", name: "Schwab U.S. Dividend Equity ETF", base: 27 },
 ];
+
+/** The benchmark the portfolio is measured against ("You vs. S&P 500"). Always requested from the feed. */
+export const BENCHMARK_SYMBOL = "SPY";
 
 const UNIVERSE_MAP = new Map(DEMO_UNIVERSE.map((entry) => [entry.symbol, entry]));
 

@@ -76,7 +76,8 @@ test("migrateUnknown upgrades a v1 state (dropping removed fields) and rejects g
   };
   const migrated = migrateUnknown(v1);
   assert.ok(migrated, "v1 should migrate");
-  assert.equal(migrated?.version, 2);
+  assert.equal(migrated?.version, 3);
+  assert.deepEqual(migrated?.orders, []);
   assert.equal(migrated?.holdings.length, 1);
   assert.ok(Array.isArray(migrated?.transactions));
   // Removed features are no longer part of the state shape.
@@ -104,4 +105,24 @@ test("saveProfile stores fields and marks setup complete once", () => {
 
 test("importStateJson throws on invalid backups", () => {
   assert.throws(() => importStateJson("{\"not\":\"valid\"}"), /not a valid/);
+});
+
+test("migrateUnknown upgrades a saved v2 state, defaulting the new v3 fields", () => {
+  const v3 = createInitialState();
+  const { watchlist, alerts, orders, snapshots, ...rest } = v3;
+  void watchlist;
+  void alerts;
+  void orders;
+  void snapshots;
+  const v2 = { ...rest, version: 2 };
+  const migrated = migrateUnknown(JSON.parse(JSON.stringify(v2)));
+  assert.ok(migrated, "v2 should migrate");
+  assert.equal(migrated?.version, 3);
+  assert.deepEqual(migrated?.watchlist, []);
+  assert.deepEqual(migrated?.alerts, []);
+  assert.deepEqual(migrated?.orders, []);
+  assert.deepEqual(migrated?.snapshots, []);
+  assert.equal(migrated?.cash, v3.cash);
+  assert.equal(migrated?.holdings.length, v3.holdings.length);
+  assert.equal(migrated?.transactions.length, v3.transactions.length);
 });

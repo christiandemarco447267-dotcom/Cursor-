@@ -16,6 +16,10 @@ export const LIMITS = {
   maxTheses: 100,
   maxCheckIns: 365,
   maxTransactions: 1000,
+  maxWatchlist: 50,
+  maxAlerts: 100,
+  maxOrders: 200,
+  maxSnapshots: 500,
 } as const;
 
 export function normalizeSymbol(raw: string): string {

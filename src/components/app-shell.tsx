@@ -15,6 +15,7 @@ import {
   NotebookPen,
   PieChart,
   Settings,
+  Star,
   UserRound,
   Wallet,
   X,
@@ -26,7 +27,7 @@ import { AuthGate } from "./auth/auth-gate";
 import { assetPath } from "@/lib/asset";
 import { experienceLabel, initialsOf } from "@/lib/profile";
 import { OnboardingTour } from "./onboarding-tour";
-import { DemoPricesBadge, Loading } from "./ui";
+import { DemoPricesBadge, Loading, ToastHost } from "./ui";
 import { ProfileSetup } from "./profile-setup";
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ size?: number }>; section: string };
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
   { href: "/app/portfolio", label: "Portfolio", icon: Wallet, section: "Overview" },
   { href: "/app/trade", label: "Trade", icon: ArrowLeftRight, section: "Overview" },
   { href: "/app/markets", label: "Markets", icon: LineChart, section: "Overview" },
+  { href: "/app/watchlist", label: "Watchlist", icon: Star, section: "Overview" },
   { href: "/app/allocate", label: "Allocation", icon: PieChart, section: "Overview" },
   { href: "/app/thesis", label: "Theses", icon: NotebookPen, section: "Process" },
   { href: "/app/insights", label: "Insights", icon: Lightbulb, section: "Process" },
@@ -291,6 +293,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer open={drawerOpen} onClose={closeDrawer} returnFocusRef={menuButtonRef} />
       <ProfileSetup />
       <OnboardingTour />
+      <ToastHost />
     </>
   );
 }

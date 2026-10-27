@@ -7,11 +7,11 @@ export const STORAGE_KEY = "sentia.state.v2";
 // Older keys read as a fallback so data from before the rebrand isn't lost.
 export const LEGACY_STORAGE_KEYS = ["trellis.state.v2", "ainvestpro.state.v2"];
 
-function nowIso(): string {
+export function nowIso(): string {
   return new Date().toISOString();
 }
 
-function newId(): string {
+export function newId(): string {
   // Older mobile WebKit (iOS Safari < 15.4) lacks crypto.randomUUID.
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -133,17 +133,21 @@ export function createInitialState(): AppState {
     holdings,
     theses,
     transactions,
+    watchlist: [],
+    alerts: [],
+    orders: [],
+    snapshots: [],
     createdAt: created,
     updatedAt: created,
   };
 }
 
 /** Stamp updatedAt after every mutation. */
-function commit(state: AppState): AppState {
+export function commit(state: AppState): AppState {
   return { ...state, updatedAt: nowIso() };
 }
 
-function pushTransaction(transactions: Transaction[], tx: Transaction): Transaction[] {
+export function pushTransaction(transactions: Transaction[], tx: Transaction): Transaction[] {
   const next = [...transactions, tx];
   if (next.length > LIMITS.maxTransactions) {
     return next.slice(next.length - LIMITS.maxTransactions);
@@ -187,7 +191,11 @@ export function withdraw(state: AppState, amount: number, note = ""): AppState {
 
 // ---- Trading -------------------------------------------------------------
 
-export function buy(state: AppState, input: { symbol: string; shares: number; price: number }): AppState {
+export function buy(
+  state: AppState,
+  input: { symbol: string; shares: number; price: number },
+  note = "",
+): AppState {
   const now = nowIso();
   const result = computeBuy(state, input, now, newId);
   const tx: Transaction = {
@@ -198,7 +206,7 @@ export function buy(state: AppState, input: { symbol: string; shares: number; pr
     price: input.price,
     amount: round2(input.shares * input.price),
     cashAfter: result.cash,
-    note: "",
+    note: note.slice(0, 200),
     createdAt: now,
   };
   return commit({
@@ -209,7 +217,11 @@ export function buy(state: AppState, input: { symbol: string; shares: number; pr
   });
 }
 
-export function sell(state: AppState, input: { symbol: string; shares: number; price: number }): AppState {
+export function sell(
+  state: AppState,
+  input: { symbol: string; shares: number; price: number },
+  note = "",
+): AppState {
   const now = nowIso();
   const result = computeSell(state, input, now);
   const tx: Transaction = {
@@ -221,7 +233,7 @@ export function sell(state: AppState, input: { symbol: string; shares: number; p
     amount: round2(input.shares * input.price),
     realizedGain: result.realizedGain,
     cashAfter: result.cash,
-    note: "",
+    note: note.slice(0, 200),
     createdAt: now,
   };
   return commit({
@@ -331,22 +343,25 @@ export function exportStateJson(state: AppState): string {
   return serializeState(state);
 }
 
-/** Accepts unknown data (e.g. an imported file or older localStorage) and upgrades it. */
+/** Accepts unknown data (e.g. an imported file, older localStorage, or a Firestore doc) and upgrades it. */
 export function migrateUnknown(raw: unknown): AppState | null {
   const current = AppStateSchema.safeParse(raw);
   if (current.success) return current.data;
 
   if (raw && typeof raw === "object" && "version" in raw) {
-    const version = (raw as { version: unknown }).version;
-    if (version === 1) {
-      const migrated = AppStateSchema.safeParse(migrateV1(raw as Record<string, unknown>));
+    let data = raw as Record<string, unknown>;
+    // Step through each migration in order: v1 → v2 → v3.
+    if (data.version === 1) data = migrateV1(data);
+    if (data.version === 2) data = migrateV2(data);
+    if (data.version === SCHEMA_VERSION) {
+      const migrated = AppStateSchema.safeParse(data);
       if (migrated.success) return migrated.data;
     }
   }
   return null;
 }
 
-function migrateV1(v1: Record<string, unknown>): unknown {
+function migrateV1(v1: Record<string, unknown>): Record<string, unknown> {
   const nowFallback = nowIso();
   const holdings = Array.isArray(v1.holdings) ? v1.holdings : [];
   const theses = Array.isArray(v1.theses) ? v1.theses : [];
@@ -354,7 +369,7 @@ function migrateV1(v1: Record<string, unknown>): unknown {
   // Fields no longer in the schema (goals, gamification, etc.) are stripped on parse.
   return {
     ...v1,
-    version: SCHEMA_VERSION,
+    version: 2,
     transactions: [],
     holdings: holdings.map((h) => {
       const holding = h as Record<string, unknown>;
@@ -364,6 +379,18 @@ function migrateV1(v1: Record<string, unknown>): unknown {
       const thesis = t as Record<string, unknown>;
       return { ...thesis, conviction: thesis.conviction ?? 3 };
     }),
+  };
+}
+
+/** v2 → v3: adds watchlist, price alerts, pending orders and performance snapshots (all empty). */
+function migrateV2(v2: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...v2,
+    version: 3,
+    watchlist: Array.isArray(v2.watchlist) ? v2.watchlist : [],
+    alerts: Array.isArray(v2.alerts) ? v2.alerts : [],
+    orders: Array.isArray(v2.orders) ? v2.orders : [],
+    snapshots: Array.isArray(v2.snapshots) ? v2.snapshots : [],
   };
 }
 

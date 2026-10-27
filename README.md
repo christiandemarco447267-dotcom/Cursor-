@@ -13,12 +13,24 @@ advice.
 ## A focused investing-practice tool
 
 Sentia is deliberately streamlined around one loop: **buy and sell, track your book, and
-document your reasoning.** The core screens are Portfolio, Trade, Markets, Allocation,
-Theses, and Insights.
+document your reasoning.** The core screens are Portfolio, Trade, Markets, Watchlist,
+Allocation, Theses, and Insights.
 
 - **Real paper trading** — Buy and sell against a cash balance. Buys merge into a single
   lot with a **weighted-average cost basis**; sells realize P/L and credit cash. Every
   action is written to a transaction ledger (`/app/trade`).
+- **Limit & stop orders** — Besides market orders, the Trade view places **buy-limit, sell-limit,
+  buy-stop and sell-stop** orders. Open orders are listed with *Cancel*; a fill engine checks every price
+  update and executes through the normal buy/sell logic at the market price. Cash/shares are re-checked at
+  fill time: an order that can't be honoured is marked *rejected* with a note in the ledger.
+- **You vs. S&P 500** — Sentia snapshots your total value and SPY (same feed) on every trade and at most every
+  5 minutes while open, then charts both **indexed to 100** (time-weighted, so deposits don't count as gains)
+  with your return, SPY's return, outperformance, max drawdown and win rate of closed trades (Portfolio +
+  Home). History is capped at 500 points and thinned evenly, always keeping the starting point.
+- **Watchlist + price alerts** — Star tickers in Markets or Trade; `/app/watchlist` shows live price/change and
+  lets you add one-time **"above $X" / "below $X"** alerts. Each fires once (in-app toast, plus a browser
+  notification if you allow it), then moves to *Triggered*. Alerts and orders are only checked while the app
+  is open in a tab.
 - **Investment theses** — Write, edit, and delete a thesis for each idea; holdings can be
   **linked to a thesis**, and Insights uses that link to keep you honest.
 - **Realtime, auto-updating market data** — `/api/market` reports true `open`/`closed`
@@ -26,7 +38,8 @@ Theses, and Insights.
   for real quotes, or run on the built-in live simulation.
 - **Portfolio-aware insights** — Concise coaching on diversification, concentration, cash,
   and thesis coverage, derived directly from your holdings.
-- **Stable state** — Versioned, Zod-validated schema with automatic migration, cross-tab
+- **Stable state** — Versioned (v3), Zod-validated schema with automatic migration (v1 → v2 → v3, for
+  localStorage, imported backups and Firestore alike), cross-tab
   synchronization, and a local-first store. A short profile setup + optional onboarding
   tour help first-time users.
 - **Mobile-friendly** — A clean top bar + slide-in navigation drawer on phones.
