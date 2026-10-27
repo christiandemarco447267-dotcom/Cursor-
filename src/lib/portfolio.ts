@@ -39,6 +39,16 @@ export function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * Share counts and per-share cost basis keep 6 decimals. Rounding them to cents
+ * (as money is) loses or invents fractional shares on a sell (1.005 − 1 became
+ * 0.01; 0.004 − 0.001 removed the lot) and drifts the average cost, which then
+ * skews realized P/L on large positions.
+ */
+export function roundQty(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
+}
+
 export function quoteMap(quotes: Quote[]): Map<string, Quote> {
   const map = new Map<string, Quote>();
   for (const quote of quotes) map.set(normalizeSymbol(quote.symbol), quote);
@@ -136,11 +146,11 @@ export function computeBuy(
   const index = holdings.findIndex((h) => normalizeSymbol(h.symbol) === symbol);
   if (index >= 0) {
     const existing = holdings[index];
-    const totalShares = existing.shares + input.shares;
+    const totalShares = roundQty(existing.shares + input.shares);
     if (totalShares > LIMITS.maxShares) {
       throw new TradeError("That would exceed the maximum position size.");
     }
-    const avgCost = round2((existing.shares * existing.avgCost + input.shares * input.price) / totalShares);
+    const avgCost = roundQty((existing.shares * existing.avgCost + input.shares * input.price) / totalShares);
     holdings[index] = { ...existing, shares: totalShares, avgCost, updatedAt: now };
   } else {
     holdings.push({
@@ -148,7 +158,7 @@ export function computeBuy(
       symbol,
       name: nameForSymbol(symbol),
       shares: input.shares,
-      avgCost: round2(input.price),
+      avgCost: roundQty(input.price),
       createdAt: now,
       updatedAt: now,
     });
@@ -183,7 +193,7 @@ export function computeSell(
 
   const proceeds = round2(input.shares * input.price);
   const realizedGain = round2((input.price - existing.avgCost) * input.shares);
-  const remaining = round2(existing.shares - input.shares);
+  const remaining = roundQty(existing.shares - input.shares);
   if (remaining <= 1e-9) {
     holdings.splice(index, 1);
   } else {

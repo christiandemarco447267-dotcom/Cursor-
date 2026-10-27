@@ -6,6 +6,8 @@ import { LIMITS } from "./validation";
 export const STORAGE_KEY = "sentia.state.v2";
 // Older keys read as a fallback so data from before the rebrand isn't lost.
 export const LEGACY_STORAGE_KEYS = ["trellis.state.v2", "ainvestpro.state.v2"];
+/** Where unreadable saved data is copied before a fresh workspace replaces it. */
+export const UNREADABLE_BACKUP_KEY = "sentia.state.unreadable-backup";
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -471,15 +473,18 @@ function migrateV3(v3: Record<string, unknown>): Record<string, unknown> {
   };
 }
 
-export function loadStateFromString(raw: string | null): AppState {
-  if (!raw) return createInitialState();
+/** Parse saved data; null when it is missing, not JSON, or not a readable Sentia state. */
+export function parseStoredState(raw: string | null): AppState | null {
+  if (!raw) return null;
   try {
-    const parsed: unknown = JSON.parse(raw);
-    const migrated = migrateUnknown(parsed);
-    return migrated ?? createInitialState();
+    return migrateUnknown(JSON.parse(raw) as unknown);
   } catch {
-    return createInitialState();
+    return null;
   }
+}
+
+export function loadStateFromString(raw: string | null): AppState {
+  return parseStoredState(raw) ?? createInitialState();
 }
 
 export function importStateJson(raw: string): AppState {

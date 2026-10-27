@@ -58,19 +58,6 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   );
 }
 
-export function ProgressBar({ percent, label = "Progress" }: { percent: number; label?: string }) {
-  const clamped = Math.max(0, Math.min(100, percent));
-  return (
-    <div
-      className="progress"
-      role="progressbar"
-      aria-label={label}
-      aria-valuenow={Math.round(clamped)} aria-valuemin={0} aria-valuemax={100}>
-      <span style={{ width: `${clamped}%` }} />
-    </div>
-  );
-}
-
 export function Sparkline({ symbol, width = 88, height = 30 }: { symbol: string; width?: number; height?: number }) {
   const series = sparklineForSymbol(symbol, 24);
   const max = Math.max(...series);

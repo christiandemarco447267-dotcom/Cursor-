@@ -201,7 +201,8 @@ function LeagueBoard({ code, uid, onLeave }: { code: string; uid: string; onLeav
             type="button"
             className="btn btn-sm"
             onClick={() => {
-              void navigator.clipboard?.writeText(code).then(() => setCopied(true));
+              // Clipboard can be denied (permissions / insecure context); the code stays visible on the button.
+              void navigator.clipboard?.writeText(code).then(() => setCopied(true), () => undefined);
             }}
             title="Copy invite code"
           >

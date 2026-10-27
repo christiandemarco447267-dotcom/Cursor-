@@ -19,7 +19,7 @@ import { formatCurrency, formatNumber } from "./format";
 import { processMarketTick, type TickResult } from "./market-tick";
 import { portfolioSymbols, summarizePortfolio, type PortfolioSummary } from "./portfolio";
 import * as mutations from "./storage";
-import { createInitialState, LEGACY_STORAGE_KEYS, loadStateFromString, serializeState, STORAGE_KEY } from "./storage";
+import { createInitialState, LEGACY_STORAGE_KEYS, loadStateFromString, parseStoredState, serializeState, STORAGE_KEY, UNREADABLE_BACKUP_KEY } from "./storage";
 import {
   AppStateSchema,
   type AppState,
@@ -247,14 +247,41 @@ function setCurrent(next: AppState) {
 }
 
 function readStoredRaw(): string | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) return raw;
-  // Fall back to a pre-rebrand key so existing data carries over.
-  for (const key of LEGACY_STORAGE_KEYS) {
-    const legacy = localStorage.getItem(key);
-    if (legacy) return legacy;
+  // Reading storage can throw (e.g. cookies/site data blocked); treat that as "no saved data".
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return raw;
+    // Fall back to a pre-rebrand key so existing data carries over.
+    for (const key of LEGACY_STORAGE_KEYS) {
+      const legacy = localStorage.getItem(key);
+      if (legacy) return legacy;
+    }
+  } catch {
+    // fall through
   }
   return null;
+}
+
+/**
+ * Load the guest workspace. Saved data this version can't read (corrupt, or
+ * written by a newer Sentia in another tab) is copied to a backup key before the
+ * fresh demo replaces it, so it is never silently destroyed.
+ */
+function loadGuestState(raw: string | null): AppState {
+  if (!raw) return createInitialState();
+  const parsed = parseStoredState(raw);
+  if (parsed) return parsed;
+  try {
+    localStorage.setItem(UNREADABLE_BACKUP_KEY, raw);
+  } catch {
+    // Quota/private mode: nothing more we can do.
+  }
+  pushToast({
+    title: "Saved data couldn't be read",
+    body: "Sentia started a fresh demo workspace. Your previous data was kept as a backup on this device.",
+    tone: "loss",
+  });
+  return createInitialState();
 }
 
 function installStorageListener() {
@@ -263,7 +290,8 @@ function installStorageListener() {
   // Cross-tab sync for guest mode (cloud mode syncs through Firestore instead).
   window.addEventListener("storage", (event) => {
     if (mode?.kind === "guest" && event.key === STORAGE_KEY) {
-      current = loadStateFromString(event.newValue);
+      // A cleared key (another tab reset storage) starts fresh; unreadable data is backed up, not wiped.
+      current = event.newValue === null ? createInitialState() : loadGuestState(event.newValue);
       emit();
     }
   });
@@ -291,7 +319,7 @@ function activate(next: StorageMode, force = false) {
   mode = next;
 
   if (next.kind === "guest") {
-    current = loadStateFromString(readStoredRaw());
+    current = loadGuestState(readStoredRaw());
     persistLocal(current); // normalize/migrate on disk (under the new key)
     installStorageListener();
     setSync({ status: "local" });
