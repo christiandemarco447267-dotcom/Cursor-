@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Cloud, Compass, Download, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { Cloud, Compass, Download, PartyPopper, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { celebrate, prefersReducedMotion } from "@/lib/celebrate";
 import { useAuth } from "@/lib/auth";
 import { localDayKey } from "@/lib/market";
 import { experienceLabel, focusLabel, initialsOf } from "@/lib/profile";
@@ -139,6 +140,8 @@ export function SettingsView() {
         </span>
       </Panel>
 
+      <CelebrationSettings />
+
       {cloud ? <AccountSecurity /> : null}
 
       {configured && !cloud ? (
@@ -240,5 +243,43 @@ export function SettingsView() {
       </div>
       {reauth.dialog}
     </div>
+  );
+}
+
+function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return <button type="button" role="switch" aria-checked={checked} aria-label={label} className="switch" onClick={() => onChange(!checked)} />;
+}
+
+/** Confetti + haptics toggles (v4). */
+function CelebrationSettings() {
+  const { state, actions } = useApp();
+  if (!state) return null;
+  const { celebrations, haptics } = state.settings;
+  return (
+    <Panel className="stack gap-md">
+      <span className="row gap-sm">
+        <PartyPopper size={18} /> <strong>Celebrations</strong>
+      </span>
+      <div className="switch-row">
+        <span className="stack" style={{ gap: 2 }}>
+          <span>Confetti</span>
+          <span className="small muted">
+            On a profitable thesis-backed close, a Discipline Score milestone, or beating SPY in the Time Machine.
+            {prefersReducedMotion() ? " Your device asks for reduced motion, so confetti stays off." : ""}
+          </span>
+        </span>
+        <Switch checked={celebrations} label="Confetti" onChange={(v) => actions.updateSettings({ celebrations: v })} />
+      </div>
+      <div className="switch-row">
+        <span className="stack" style={{ gap: 2 }}>
+          <span>Vibration</span>
+          <span className="small muted">A short buzz on supported phones.</span>
+        </span>
+        <Switch checked={haptics} label="Vibration" onChange={(v) => actions.updateSettings({ haptics: v })} />
+      </div>
+      <button type="button" className="btn btn-sm" style={{ width: "fit-content" }} onClick={() => celebrate({ celebrations, haptics })}>
+        Preview
+      </button>
+    </Panel>
   );
 }

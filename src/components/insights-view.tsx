@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowLeftRight, CheckCircle2, Info, NotebookPen, TriangleAlert } from "lucide-react";
 import { buildInsights, type InsightTone } from "@/lib/insights";
 import { useApp } from "@/lib/store";
+import { BiasRadarPanel, MoodPanel } from "./bias-mood";
+import { DisciplineCard } from "./discipline-card";
 import { Loading, Panel, PageHeader } from "./ui";
 
 const TONE_ICON: Record<InsightTone, React.ReactNode> = {
@@ -28,6 +30,10 @@ export function InsightsView() {
   return (
     <div className="stack gap-lg animate-in">
       <PageHeader title="Insights" subtitle="Portfolio-aware coaching to keep your process on track." />
+
+      <DisciplineCard />
+      <BiasRadarPanel />
+      <MoodPanel />
 
       <div className="grid grid-2">
         {insights.map((insight) => (
@@ -54,6 +60,10 @@ export function InsightsView() {
           <span className="small muted">Buy or sell to act on these insights</span>
         </Link>
       </div>
+
+      <p className="disclaimer">
+        Educational coaching based on your simulated paper account. Not investment advice; bias flags are simple heuristics.
+      </p>
     </div>
   );
 }

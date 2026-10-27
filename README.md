@@ -14,7 +14,8 @@ advice.
 
 Sentia is deliberately streamlined around one loop: **buy and sell, track your book, and
 document your reasoning.** The core screens are Portfolio, Trade, Markets, Watchlist,
-Allocation, Theses, and Insights.
+Allocation, Theses, and Insights, plus coaching and practice tools: Discipline Score, Bias Radar,
+Ask Sentia, Legend portfolios, the Time Machine and friend leagues.
 
 - **Real paper trading** — Buy and sell against a cash balance. Buys merge into a single
   lot with a **weighted-average cost basis**; sells realize P/L and credit cash. Every
@@ -38,11 +39,72 @@ Allocation, Theses, and Insights.
   for real quotes, or run on the built-in live simulation.
 - **Portfolio-aware insights** — Concise coaching on diversification, concentration, cash,
   and thesis coverage, derived directly from your holdings.
-- **Stable state** — Versioned (v3), Zod-validated schema with automatic migration (v1 → v2 → v3, for
-  localStorage, imported backups and Firestore alike), cross-tab
+- **Stable state** — Versioned (v4), Zod-validated schema with automatic migration (v1 → v2 → v3 → v4, for
+  localStorage, imported backups and Firestore alike; every new field is defaulted), cross-tab
   synchronization, and a local-first store. A short profile setup + optional onboarding
   tour help first-time users.
 - **Mobile-friendly** — A clean top bar + slide-in navigation drawer on phones.
+
+### Coaching & practice features
+
+All coaching text is educational, rule-based and computed on-device. None of it is investment advice.
+
+- **Discipline Score (0–100)** — A *process* score shown on Home and Insights with a breakdown of five
+  equally weighted parts (20 pts each): thesis coverage, position sizing (full credit when no position is
+  above ~25% of the portfolio, none at 50%+), diversification (holdings + sectors; broad funds count extra),
+  biases avoided (last 30 days) and alerts/stops usage (active alert, open sell-stop or stress-test exit per
+  holding). `src/lib/discipline.ts`.
+- **Bias Radar** — Flags FOMO buys (≥ +3% day, or a fresh recent high ≥5% above your recent fills), revenge
+  trades (a buy within 24h of a realized loss), panic sells (a loss on a ≤ −3% day), the disposition effect
+  (losers held ≥1.25× longer than winners) and overtrading (6+ trades in 24h). The Trade form shows a
+  gentle, non-blocking nudge before you place a trade; Insights counts each bias over the last 30 days.
+  The symbol's day change is recorded on each trade for this. `src/lib/biases.ts`.
+- **Mood tags** — Optionally tag a trade Confident / Anxious / Bored / Excited / Calm. Insights shows realized
+  P/L and win rate per mood (attributed to the mood at entry or at exit). `src/lib/moods.ts`.
+- **"If you never sold" ghost line** — On the You vs. S&P 500 chart (Portfolio), with a toggleable legend for
+  each line. *Approximation:* Sentia stores only total value + SPY per snapshot, so each sold lot's later
+  value is estimated by linear interpolation between your own fill prices for that symbol and the current
+  quote (flat outside that range), then added back to your real value. Deposits/withdrawals are excluded the
+  same way as the main line. `seriesWithGhost` in `src/lib/benchmark.ts`.
+- **Time Machine** (`/app/time-machine`) — A separate practice account (stored in `state.replay`; the main
+  account is never touched). Scenarios: COVID crash (Feb–Jun 2020), 2008 crisis (Sep 2008–Mar 2009) and the
+  2021 meme/tech run (Jan–Dec 2021). Start with $10k, step +1 day / +1 week / to the end, trade at each day's
+  close, watch your equity curve vs SPY, and get a report card (return vs SPY, max drawdown, process
+  feedback such as panic selling into the drawdown or concentration). Results are kept in `replayHistory`.
+  **Data:** real daily closes bundled in `src/data/time-machine.json`, fetched by
+  `scripts/fetch-time-machine-data.mjs` from the Yahoo Finance chart API (split-adjusted closes, *not*
+  dividend-adjusted, so total returns are slightly understated). Tickers: SPY, QQQ, AAPL, MSFT, AMZN, NVDA,
+  JPM, XOM, TSLA (not in 2008 — it IPO'd in 2010, so it's dropped rather than invented) and GME (2021 only).
+  Because prices are split-adjusted, e.g. 2021 GME and 2008 AAPL show today's per-share scale.
+- **Legend portfolios** (`/app/legends`) — Compare your holdings with Berkshire Hathaway's top 15 positions
+  from its **13F-HR for the quarter ended 2026-06-30** (filed 2026-08-14, SEC accession
+  0001193125-26-352200; weights = share of reported 13F value) and two clearly labelled *model* portfolios
+  (Classic 60/40, Three-fund). Shows weight-based overlap % (Σ of the smaller weight per shared issuer;
+  GOOG/GOOGL merged), shared names, sector mix side by side and concentration (top weight, effective number of
+  holdings). Data and sources live in `src/data/legends.ts`.
+- **Shareable trade cards** — From any closed trade (a ledger sell) in Trade → Recent activity, generate a
+  glassy 1080×1080 PNG (canvas) with the symbol, thesis title, result %, hold length and the Sentia logo.
+  Dollar amounts are hidden by default (toggle to show). Download, or share via the Web Share API where
+  supported. `src/lib/share-card.ts`.
+- **Celebrations** — Lightweight canvas confetti (no dependency; skipped when the OS asks for reduced motion)
+  plus `navigator.vibrate` where supported, on a profitable close linked to a thesis, crossing a Discipline
+  Score milestone (60/75/90; the first load only records a baseline) and beating SPY in the Time Machine.
+  Both can be turned off in Settings.
+- **Ask Sentia** (`/app/coach`) — A rule-based chat coach with suggested-question chips that answers from your
+  data: sector concentration ("am I too heavy in tech?" via a symbol → sector map in `src/lib/sectors.ts`),
+  cash level, biggest winner/loser, thesis coverage, biases, mood patterns, Discipline Score and a weekly
+  review list. It is built behind a `CoachProvider` interface (`src/lib/coach.ts`) so an LLM provider can be
+  plugged in later; only the offline rule-based provider ships, with no API keys.
+- **Thesis stress test** — On each thesis, *Stress test* asks "What would prove this wrong?" plus an optional
+  exit trigger (price above/below and/or a free-text condition). Saving can create a price alert through the
+  existing alert system; the stress test and its alert status show on the thesis. `src/lib/stress-test.ts`.
+- **Friend leagues** (`/app/leagues`) — Only when Firebase is configured *and* you're signed in: create a
+  league (6-character code, no ambiguous 0/O/1/I) or join one by code. Each member publishes only a small
+  summary (display name, Discipline Score, 30-day return %) to `leagues/{code}/members/{uid}`; the
+  leaderboard ranks by Discipline Score, then return (ties share a rank). `firestore.rules` lets any verified
+  user fetch a league by code (no listing), only members read the leaderboard, and each user write/delete
+  only their own member doc with validated fields. Guest/demo mode (e.g. GitHub Pages) shows an explanatory
+  locked state. `src/lib/leagues.ts` (pure, tested) + `src/lib/league-store.ts` (Firestore).
 
 ## Accounts & cloud sync (Firebase)
 
@@ -128,6 +190,7 @@ cp .env.example .env.local
 | `npm run typecheck`| TypeScript check      |
 | `npm test`         | Unit tests            |
 | `npm run og:image` | Regenerate `public/og-image.png` (social share image) |
+| `npm run data:time-machine` | Re-fetch the bundled Time Machine price data (`src/data/time-machine.json`) |
 
 ## Continuous integration & deployment
 
@@ -143,7 +206,10 @@ cp .env.example .env.local
 
 - **`src/lib`** — framework-free domain logic: Zod schemas + migration (`types.ts`,
   `storage.ts`), valuation & trading (`portfolio.ts`), market data (`market.ts`),
-  insights, profile helpers, and a `useSyncExternalStore`-based store (`store.tsx`).
+  insights, profile helpers, and a `useSyncExternalStore`-based store (`store.tsx`). The v4 coaching
+  features are pure, unit-tested modules: `biases.ts`, `moods.ts`, `discipline.ts`, `time-machine.ts`,
+  `legends.ts`, `leagues.ts`, `coach.ts`, `stress-test.ts`, `share-card.ts`, `sectors.ts`.
+- **`src/data`** — bundled static data: Time Machine prices and legend portfolios (with sources and as-of dates).
 - **`src/app`** — App Router pages (thin) + API routes (`/api/market`, `/api/health`).
 - **`src/components`** — one client view component per screen plus shared UI primitives.
 - **`src/proxy.ts`** — security headers (Next.js 16 `proxy` convention).

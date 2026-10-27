@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Sentia: each signed-in user can read/write only their own documents under
-// users/{uid} (the paper account lives at users/{uid}/state/current).
+// users/{uid} (the paper account lives at users/{uid}/state/current), plus the
+// opt-in friend leagues below.
 // A verified email is required, matching the app, which blocks unverified accounts.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -27,6 +28,50 @@ service cloud.firestore {
       // Any other per-user documents added later: owner-only.
       match /{collection}/{docId} {
         allow read, write: if isOwner(uid) && collection != 'state';
+      }
+    }
+
+    // Friend leagues (opt-in). leagues/{code} holds the league name; each member
+    // publishes only a small public summary at leagues/{code}/members/{uid}.
+    // Knowing the code is the invite: any verified user can fetch a league by code
+    // (no listing), only members can read the leaderboard, and each user can write
+    // or delete only their own member doc.
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    match /leagues/{code} {
+      function isMember() {
+        return exists(/databases/$(database)/documents/leagues/$(code)/members/$(request.auth.uid));
+      }
+
+      allow get: if isVerified();
+      allow list: if false;
+      allow create: if isVerified()
+        && code.matches('^[A-HJ-NP-Z2-9]{6}$')
+        && request.resource.data.keys().hasOnly(['name', 'createdBy', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+
+      match /members/{memberId} {
+        allow read: if isVerified() && isMember();
+        allow create, update: if isVerified()
+          && memberId == request.auth.uid
+          && exists(/databases/$(database)/documents/leagues/$(code))
+          && request.resource.data.keys().hasOnly(['displayName', 'disciplineScore', 'monthlyReturnPct', 'updatedAt'])
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() > 0
+          && request.resource.data.displayName.size() <= 30
+          && request.resource.data.disciplineScore is int
+          && request.resource.data.disciplineScore >= 0
+          && request.resource.data.disciplineScore <= 100
+          && (request.resource.data.monthlyReturnPct == null || request.resource.data.monthlyReturnPct is number)
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isVerified() && memberId == request.auth.uid;
       }
     }
 

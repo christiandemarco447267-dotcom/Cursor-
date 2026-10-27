@@ -12,7 +12,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/lib/**/*.test.ts",
-    "og:image": "tsx scripts/generate-og-image.tsx"
+    "og:image": "tsx scripts/generate-og-image.tsx",
+    "data:time-machine": "node scripts/fetch-time-machine-data.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

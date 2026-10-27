@@ -2,7 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Clock3, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Clock3, Lightbulb, X } from "lucide-react";
+import { previewTradeBiases } from "@/lib/biases";
+import { MOOD_INFO } from "@/lib/moods";
+import { MOODS, type Mood } from "@/lib/types";
+import { ShareTradeButton } from "./share-card";
 import { formatCurrency, formatNumber, formatRelativeDay } from "@/lib/format";
 import { DEMO_UNIVERSE, nameForSymbol } from "@/lib/market";
 import { orderCondition, orderLabel } from "@/lib/orders";
@@ -46,6 +50,7 @@ export function TradeView() {
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [mood, setMood] = useState<Mood | undefined>(undefined);
 
   const prices = useMemo(() => quoteMap(quotes), [quotes]);
 
@@ -57,6 +62,19 @@ export function TradeView() {
   const sharesNum = parseAmount(shares);
   const priceNum = parseAmount(price);
   const estimated = sharesNum !== null && priceNum !== null ? sharesNum * priceNum : null;
+
+  // Bias Radar nudges for the trade being typed (gentle, never blocking).
+  const nudges =
+    kind === "market" && isValidSymbol(normalized) && sharesNum !== null && sharesNum > 0 && priceNum !== null && priceNum > 0
+      ? previewTradeBiases(state.transactions, {
+          side: mode,
+          symbol: normalized,
+          shares: sharesNum,
+          price: priceNum,
+          dayChange: quote?.changePercent,
+          avgCost: held?.avgCost,
+        })
+      : [];
 
   const useMarketPrice = () => {
     if (quote) setPrice(String(quote.price));
@@ -98,14 +116,16 @@ export function TradeView() {
     }
 
     try {
+      const meta = { mood, dayChange: quote?.changePercent };
       if (mode === "buy") {
-        actions.buy({ symbol: normalized, shares: sharesNum, price: priceNum });
+        actions.buy({ symbol: normalized, shares: sharesNum, price: priceNum, ...meta });
         setNotice(`Bought ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(priceNum)}.`);
       } else {
-        actions.sell({ symbol: normalized, shares: sharesNum, price: priceNum });
+        actions.sell({ symbol: normalized, shares: sharesNum, price: priceNum, ...meta });
         setNotice(`Sold ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(priceNum)}.`);
       }
       setShares("");
+      setMood(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Trade could not be completed.");
     }
@@ -235,6 +255,41 @@ export function TradeView() {
               </div>
             ) : null}
 
+            {kind === "market" ? (
+              <div className="field">
+                <span id="mood-label" className="small muted">
+                  How are you feeling? <span className="dim">(optional)</span>
+                </span>
+                <div className="mood-row" role="group" aria-labelledby="mood-label">
+                  {MOODS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      className="mood-pick"
+                      aria-pressed={mood === m}
+                      onClick={() => setMood((cur) => (cur === m ? undefined : m))}
+                    >
+                      <span aria-hidden="true">{MOOD_INFO[m].emoji}</span> {MOOD_INFO[m].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {nudges.length ? (
+              <div className="stack gap-sm" aria-live="polite">
+                {nudges.map((n) => (
+                  <div key={n.bias} className="nudge small" role="note">
+                    <Lightbulb size={16} />
+                    <span>
+                      <strong>Bias check: {n.title}.</strong> {n.body}
+                    </span>
+                  </div>
+                ))}
+                <span className="small dim">Just a nudge — you can still place this trade. Educational only, not advice.</span>
+              </div>
+            ) : null}
+
             <div aria-live="polite" className="stack gap-sm">
               {error ? (
                 <span className="form-error" role="alert">
@@ -286,8 +341,13 @@ export function TradeView() {
                     <div className="row between small dim">
                       <span>{formatRelativeDay(tx.createdAt)}</span>
                       {tx.realizedGain !== undefined ? (
-                        <span className={tx.realizedGain >= 0 ? "gain" : "loss"}>
-                          realized {formatCurrency(tx.realizedGain)}
+                        <span className="row gap-sm">
+                          <span className={tx.realizedGain >= 0 ? "gain" : "loss"}>realized {formatCurrency(tx.realizedGain)}</span>
+                          {tx.type === "sell" ? <ShareTradeButton txId={tx.id} symbol={tx.symbol} /> : null}
+                        </span>
+                      ) : tx.mood ? (
+                        <span>
+                          {MOOD_INFO[tx.mood].emoji} {MOOD_INFO[tx.mood].label}
                         </span>
                       ) : null}
                     </div>

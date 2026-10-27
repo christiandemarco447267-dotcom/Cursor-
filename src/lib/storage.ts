@@ -1,6 +1,6 @@
 import { nameForSymbol } from "./market";
 import { computeBuy, computeSell, round2 } from "./portfolio";
-import { AppState, AppStateSchema, SCHEMA_VERSION, Thesis, Transaction } from "./types";
+import { AppState, AppStateSchema, SCHEMA_VERSION, Thesis, Transaction, type Mood, type Settings } from "./types";
 import { LIMITS } from "./validation";
 
 export const STORAGE_KEY = "sentia.state.v2";
@@ -137,6 +137,11 @@ export function createInitialState(): AppState {
     alerts: [],
     orders: [],
     snapshots: [],
+    settings: { celebrations: true, haptics: true },
+    achievements: { disciplineMilestone: null },
+    replay: null,
+    replayHistory: [],
+    leagues: [],
     createdAt: created,
     updatedAt: created,
   };
@@ -191,13 +196,33 @@ export function withdraw(state: AppState, amount: number, note = ""): AppState {
 
 // ---- Trading -------------------------------------------------------------
 
+/** Optional context recorded on a trade (v4): the user's mood and the symbol's day change. */
+export type TradeMeta = { mood?: Mood; dayChange?: number };
+
+function metaFields(meta: TradeMeta | undefined): Pick<Transaction, "mood" | "dayChange"> {
+  const out: Pick<Transaction, "mood" | "dayChange"> = {};
+  if (meta?.mood) out.mood = meta.mood;
+  if (meta?.dayChange !== undefined && Number.isFinite(meta.dayChange)) out.dayChange = Math.round(meta.dayChange * 100) / 100;
+  return out;
+}
+
 export function buy(
   state: AppState,
   input: { symbol: string; shares: number; price: number },
   note = "",
+  meta?: TradeMeta,
 ): AppState {
   const now = nowIso();
   const result = computeBuy(state, input, now, newId);
+  const sym = input.symbol.trim().toUpperCase();
+  // A brand-new position picks up the latest thesis already written for its symbol.
+  const existingThesis = [...state.theses].reverse().find((t) => t.symbol.toUpperCase() === sym);
+  if (existingThesis) {
+    result.holdings = result.holdings.map((h) =>
+      h.symbol.toUpperCase() === sym && !h.thesisId ? { ...h, thesisId: existingThesis.id } : h,
+    );
+  }
+  const thesisId = result.holdings.find((h) => h.symbol.toUpperCase() === sym)?.thesisId;
   const tx: Transaction = {
     id: newId(),
     type: "buy",
@@ -207,6 +232,8 @@ export function buy(
     amount: round2(input.shares * input.price),
     cashAfter: result.cash,
     note: note.slice(0, 200),
+    ...metaFields(meta),
+    ...(thesisId ? { thesisId } : {}),
     createdAt: now,
   };
   return commit({
@@ -221,8 +248,10 @@ export function sell(
   state: AppState,
   input: { symbol: string; shares: number; price: number },
   note = "",
+  meta?: TradeMeta,
 ): AppState {
   const now = nowIso();
+  const thesisId = state.holdings.find((h) => h.symbol.toUpperCase() === input.symbol.trim().toUpperCase())?.thesisId;
   const result = computeSell(state, input, now);
   const tx: Transaction = {
     id: newId(),
@@ -234,6 +263,8 @@ export function sell(
     realizedGain: result.realizedGain,
     cashAfter: result.cash,
     note: note.slice(0, 200),
+    ...metaFields(meta),
+    ...(thesisId ? { thesisId } : {}),
     createdAt: now,
   };
   return commit({
@@ -333,6 +364,30 @@ export function saveProfile(state: AppState, input: ProfileInput): AppState {
   });
 }
 
+// ---- v4: settings, milestones, leagues -------------------------------------
+
+export function updateSettings(state: AppState, patch: Partial<Settings>): AppState {
+  return commit({ ...state, settings: { ...state.settings, ...patch } });
+}
+
+/** Record the highest Discipline Score milestone reached (never moves down). */
+export function recordDisciplineMilestone(state: AppState, milestone: number): AppState {
+  const prev = state.achievements.disciplineMilestone;
+  if (prev !== null && milestone <= prev) return state;
+  return commit({ ...state, achievements: { ...state.achievements, disciplineMilestone: milestone } });
+}
+
+export function rememberLeague(state: AppState, code: string): AppState {
+  if (state.leagues.includes(code)) return state;
+  if (state.leagues.length >= LIMITS.maxLeagues) throw new Error(`You can be in up to ${LIMITS.maxLeagues} leagues.`);
+  return commit({ ...state, leagues: [...state.leagues, code] });
+}
+
+export function forgetLeague(state: AppState, code: string): AppState {
+  if (!state.leagues.includes(code)) return state;
+  return commit({ ...state, leagues: state.leagues.filter((c) => c !== code) });
+}
+
 // ---- Persistence ---------------------------------------------------------
 
 export function serializeState(state: AppState): string {
@@ -350,9 +405,10 @@ export function migrateUnknown(raw: unknown): AppState | null {
 
   if (raw && typeof raw === "object" && "version" in raw) {
     let data = raw as Record<string, unknown>;
-    // Step through each migration in order: v1 → v2 → v3.
+    // Step through each migration in order: v1 → v2 → v3 → v4.
     if (data.version === 1) data = migrateV1(data);
     if (data.version === 2) data = migrateV2(data);
+    if (data.version === 3) data = migrateV3(data);
     if (data.version === SCHEMA_VERSION) {
       const migrated = AppStateSchema.safeParse(data);
       if (migrated.success) return migrated.data;
@@ -391,6 +447,23 @@ function migrateV2(v2: Record<string, unknown>): Record<string, unknown> {
     alerts: Array.isArray(v2.alerts) ? v2.alerts : [],
     orders: Array.isArray(v2.orders) ? v2.orders : [],
     snapshots: Array.isArray(v2.snapshots) ? v2.snapshots : [],
+  };
+}
+
+/**
+ * v3 → v4: adds settings (celebrations/haptics on), achievements (not yet
+ * baselined), an empty Time Machine session/history and no leagues. Existing
+ * trades simply have no mood/dayChange/thesisId and theses no stress test.
+ */
+function migrateV3(v3: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...v3,
+    version: 4,
+    settings: { celebrations: true, haptics: true },
+    achievements: { disciplineMilestone: null },
+    replay: null,
+    replayHistory: [],
+    leagues: [],
   };
 }
 

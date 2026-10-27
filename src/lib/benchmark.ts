@@ -91,7 +91,13 @@ export function maybeRecordSnapshot(state: AppState, quotes: Quote[], now: numbe
   return commit({ ...state, snapshots: capSnapshots([...state.snapshots, snapshot]) });
 }
 
-export type BenchmarkPoint = { t: string; portfolio: number; spy: number };
+export type BenchmarkPoint = {
+  t: string;
+  portfolio: number;
+  spy: number;
+  /** "If you never sold" ghost index (see neverSoldIndex); absent when there's nothing to compare. */
+  ghost?: number;
+};
 
 /**
  * Both lines indexed to 100 at the first snapshot (the account start for this
@@ -177,4 +183,118 @@ export function livePoint(state: AppState, quotes: Quote[], now: number = Date.n
     spy: spy.price,
     flow: netFlowSince(state.transactions, last.t),
   };
+}
+
+// ---- "If you never sold" ghost line ------------------------------------------
+//
+// Approximation (documented in the README): Sentia doesn't store per-symbol price
+// history, only total value + SPY per snapshot. For each sell we know the price at
+// that moment (the fill) and every other buy/sell price of the same symbol, plus
+// the live quote now. A symbol's price at a snapshot time is linearly interpolated
+// between those observations (held flat before the first and after the last).
+// The ghost value at time t is your real value plus, for each sell made by t,
+// what those shares would be worth now minus the cash the sale brought in — i.e.
+// "keep every share you ever bought, at its buy quantity". Deposits/withdrawals
+// are removed exactly like the main line.
+
+export type PriceObs = { t: number; price: number };
+
+/** Known prices per symbol: every buy/sell fill, plus the current quote. */
+export function priceObservations(transactions: Transaction[], quotes: Quote[], now: number): Map<string, PriceObs[]> {
+  const map = new Map<string, PriceObs[]>();
+  const add = (sym: string, obs: PriceObs) => {
+    const list = map.get(sym) ?? [];
+    list.push(obs);
+    map.set(sym, list);
+  };
+  for (const tx of transactions) {
+    if ((tx.type === "buy" || tx.type === "sell") && tx.symbol && tx.price && tx.price > 0) {
+      add(normalizeSymbol(tx.symbol), { t: ms(tx.createdAt), price: tx.price });
+    }
+  }
+  for (const q of quotes) if (q.price > 0) add(normalizeSymbol(q.symbol), { t: now, price: q.price });
+  for (const list of map.values()) list.sort((a, b) => a.t - b.t);
+  return map;
+}
+
+/** Linear interpolation between observations; flat outside the observed range. */
+export function estimatePrice(obs: PriceObs[] | undefined, t: number): number | null {
+  if (!obs || obs.length === 0) return null;
+  if (t <= obs[0].t) return obs[0].price;
+  const last = obs[obs.length - 1];
+  if (t >= last.t) return last.price;
+  for (let i = 1; i < obs.length; i += 1) {
+    const b = obs[i];
+    if (t <= b.t) {
+      const a = obs[i - 1];
+      const span = b.t - a.t;
+      return span > 0 ? a.price + ((b.price - a.price) * (t - a.t)) / span : b.price;
+    }
+  }
+  return last.price;
+}
+
+/**
+ * Ghost index aligned to benchmarkSeries(snapshots, live): one value per point,
+ * 100 at the first point. Returns null when there are no sells (the ghost would
+ * equal your line).
+ */
+export function neverSoldIndex(
+  snapshots: PerfSnapshot[],
+  transactions: Transaction[],
+  quotes: Quote[],
+  live: PerfSnapshot | null | undefined,
+  now: number,
+): number[] | null {
+  const sells = transactions.filter((tx) => tx.type === "sell" && tx.symbol && tx.shares && tx.price !== undefined);
+  const all = live ? [...snapshots, live] : snapshots;
+  if (sells.length === 0 || all.length === 0) return null;
+  const obs = priceObservations(transactions, quotes, now);
+  const ghostValue = (snap: PerfSnapshot) => {
+    const t = ms(snap.t);
+    let extra = 0;
+    for (const s of sells) {
+      if (ms(s.createdAt) > t) continue;
+      const p = estimatePrice(obs.get(normalizeSymbol(s.symbol as string)), t) ?? (s.price as number);
+      extra += (s.shares as number) * p - s.amount;
+    }
+    return snap.value + extra;
+  };
+  const values = all.map(ghostValue);
+  const out = [100];
+  let index = 100;
+  for (let i = 1; i < all.length; i += 1) {
+    const prev = values[i - 1];
+    const growth = prev > 0 ? (values[i] - all[i].flow) / prev : 1;
+    if (Number.isFinite(growth) && growth > 0) index *= growth;
+    out.push(index);
+  }
+  return out;
+}
+
+/** benchmarkSeries with the ghost line merged in (when there were sells). */
+export function seriesWithGhost(
+  snapshots: PerfSnapshot[],
+  transactions: Transaction[],
+  quotes: Quote[],
+  live: PerfSnapshot | null | undefined,
+  now: number,
+): BenchmarkPoint[] {
+  const points = benchmarkSeries(snapshots, live);
+  const ghost = neverSoldIndex(snapshots, transactions, quotes, live, now);
+  if (!ghost) return points;
+  return points.map((p, i) => ({ ...p, ghost: ghost[i] }));
+}
+
+/** Time-weighted return over the trailing window (for league summaries). Null without two snapshots in range. */
+export function trailingReturnPct(snapshots: PerfSnapshot[], now: number, days = 30): number | null {
+  const since = now - days * 86_400_000;
+  // Start from the last snapshot at/before the window start, if any, so the full window is covered.
+  let startIdx = snapshots.findIndex((s) => ms(s.t) >= since);
+  if (startIdx < 0) return null;
+  if (startIdx > 0) startIdx -= 1;
+  const window = snapshots.slice(startIdx).filter((s) => ms(s.t) <= now);
+  if (window.length < 2) return null;
+  const series = benchmarkSeries(window);
+  return series[series.length - 1].portfolio - 100;
 }
