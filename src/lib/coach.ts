@@ -2,7 +2,7 @@
 // Ships rule-based only (no network, no API keys). The CoachProvider interface is
 // the seam for plugging in an LLM later: build the same CoachContext, send it
 // (or a summary of it) to a model, and return a CoachReply.
-import { benchmarkStats, winRate } from "./benchmark";
+import { benchmarkStats, feedSegment, winRate } from "./benchmark";
 import { BIAS_INFO, BIAS_KEYS } from "./biases";
 import { disciplineScore, weakestPart } from "./discipline";
 import { moodExtremes, moodStats } from "./moods";
@@ -255,7 +255,7 @@ export function ruleBasedAnswer(question: string, ctx: CoachContext): CoachReply
       };
     }
     case "benchmark": {
-      const b = benchmarkStats(state.snapshots, state.transactions);
+      const b = benchmarkStats(feedSegment(state.snapshots), state.transactions);
       const w = winRate(state.transactions);
       return {
         intent,

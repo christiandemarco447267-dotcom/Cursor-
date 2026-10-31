@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import pkg from "./package.json";
 
 // When building for GitHub Pages we produce a fully static export served from a
 // repo subpath (https://<user>.github.io/<repo>/). The app is local-first, so it
@@ -10,6 +11,8 @@ const isStaticRoot = process.env.STATIC_EXPORT === "true";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Exposed to the client for feedback context ("which version did this happen on?").
+  env: { NEXT_PUBLIC_APP_VERSION: pkg.version },
   reactStrictMode: true,
   ...(isPages
     ? {

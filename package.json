@@ -1,6 +1,6 @@
 {
   "name": "sentia",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Sentia — a focused, professional paper-trading coach (buy/sell simulation, portfolio, theses, insights) with local-first data.",
   "scripts": {

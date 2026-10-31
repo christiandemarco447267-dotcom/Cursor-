@@ -4,18 +4,19 @@ import { LegalPage } from "@/components/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "How Sentia handles your data: demo mode stays in your browser; optional accounts sync your paper portfolio privately. No tracking.",
+  description: "How Sentia handles your data: your paper portfolio stays in your browser or your account; optional feedback, opt-in anonymous usage counts and the AI coach are described exactly here.",
 };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage eyebrow="Legal" title="Privacy" updated="October 23, 2026">
+    <LegalPage eyebrow="Legal" title="Privacy" updated="October 30, 2026">
       <section className="stack gap-sm">
         <h2>The short version</h2>
         <p className="muted">
           In demo mode, your portfolio, trades, theses, and profile live only in your own browser. Where accounts are
           enabled, you can optionally sign in so your paper account is saved to your account and synced across your
-          devices. We do not sell or share your data, and Sentia adds no tracking.
+          devices. We do not sell your data. Sentia uses no cookies for tracking and no third-party analytics. If you opt
+          in, it counts page views and a few actions anonymously (details below); it&apos;s off until you say yes.
         </p>
       </section>
 
@@ -27,7 +28,9 @@ export default function PrivacyPage() {
             in your browser&apos;s <code>localStorage</code> on the device you are using.
           </li>
           <li>
-            <strong>Demo mode:</strong> nothing you enter is sent to a server.
+            <strong>Demo mode:</strong> your portfolio is never sent to a server. The only exceptions are the optional
+            features below, each of which you trigger yourself (asking the AI coach, sending feedback, opting in to usage
+            counts) or which send only ticker symbols (real prices).
           </li>
           <li>
             <strong>Signed-in accounts</strong> (when the deployment has accounts enabled): your email address and, if you
@@ -46,11 +49,79 @@ export default function PrivacyPage() {
       <section className="stack gap-sm">
         <h2>Market data</h2>
         <p className="muted">
-          By default — and always on the public demo site — prices are simulated in your browser and no market data
-          request leaves your device. On self-hosted builds the operator may configure an optional Finnhub API key. In
-          that case the ticker symbols being displayed are sent to Finnhub (directly or via the app&apos;s own server
-          route) to fetch quotes. Finnhub&apos;s own privacy policy applies to those requests. Your holdings,
-          quantities, and other data are never sent.
+          Without the optional Sentia API, prices are simulated in your browser, labelled <strong>Demo</strong>, and no
+          market-data request leaves your device. When the deployment configures the Sentia API (a small Cloudflare
+          Worker run by the site owner), your browser sends it the <strong>ticker symbols</strong> on screen; the API
+          fetches quotes from Finnhub (or Yahoo Finance as a fallback) using a key kept on the server. Your holdings,
+          share counts and other data are never sent for prices. Like any web server, Cloudflare processes your IP
+          address to deliver the request; the API uses it only in memory for rate limiting and doesn&apos;t store it.
+        </p>
+      </section>
+
+      <section className="stack gap-sm">
+        <h2>Feedback and the survey</h2>
+        <ul className="muted">
+          <li>
+            When you press <strong>Send feedback</strong>, Sentia sends: the type (bug, idea or praise), your message,
+            your email only if you typed one, and — if the &ldquo;technical details&rdquo; box is ticked (it is by
+            default and you can untick it) — the page you were on, the app version, your screen size, your
+            browser&apos;s user-agent string and whether prices were live or demo.
+          </li>
+          <li>
+            A summary of your paper portfolio (total value, cash, tickers and share counts) is included{" "}
+            <strong>only if you tick that box</strong>. It is unticked by default.
+          </li>
+          <li>
+            The one-time survey (shown once, about a week after you start) sends your 1–5 rating and your optional
+            answer, nothing else.
+          </li>
+          <li>
+            Messages are stored in the site owner&apos;s Cloudflare account (Workers KV) for up to one year and may be
+            forwarded to the owner&apos;s private Discord or Slack channel. Only the owner can read them. To stop spam,
+            the API keeps a short-lived counter keyed by a one-way hash of your IP address (the hash changes daily and
+            the counter expires within an hour); the IP address itself isn&apos;t stored.
+          </li>
+          <li>
+            On builds without the Sentia API, the feedback button instead opens a prefilled email or a GitHub issue;
+            nothing is sent until you send that email or submit the issue yourself (GitHub issues are public).
+          </li>
+        </ul>
+      </section>
+
+      <section className="stack gap-sm">
+        <h2>Anonymous usage counts (opt-in)</h2>
+        <ul className="muted">
+          <li>
+            Off by default. A small notice asks once; you can change your answer anytime in{" "}
+            <strong>Settings → Usage statistics</strong>. Your choice is remembered in your browser&apos;s
+            localStorage (not a cookie).
+          </li>
+          <li>
+            When on, Sentia sends only: a page name (for example <code>/app/trade</code>, never query strings) when
+            you open a page, and these named events when they happen: <code>trade_placed</code>,{" "}
+            <code>thesis_created</code>, <code>time_machine_finished</code>, <code>coach_asked</code>,{" "}
+            <code>feedback_sent</code>.
+          </li>
+          <li>
+            The API adds them to <strong>daily totals</strong> (e.g. &ldquo;37 trades placed on Oct 30&rdquo;) and keeps
+            nothing else: no cookies, no user or device ID, no IP address, no tickers, amounts or text. Totals are kept
+            for about 13 months.
+          </li>
+        </ul>
+      </section>
+
+      <section className="stack gap-sm">
+        <h2>AI coach</h2>
+        <p className="muted">
+          Quick-question chips and the offline coach run entirely in your browser. When the deployment has the AI coach
+          enabled and you type a question in Ask Sentia, your question and a short summary of your paper account are
+          sent through the Sentia API to an AI provider (OpenAI or Anthropic, as configured by the site owner) to write
+          the answer. The summary contains: cash and total value, holdings (ticker, shares, average cost, price, value,
+          gain), up to 10 recent trades with any mood tags, Bias Radar findings, your Discipline Score, your thesis
+          titles/conviction/risks, and your return vs. the S&amp;P 500. It never includes your name, email or profile.
+          The Sentia API doesn&apos;t store questions or answers; the provider processes them under its own API terms.
+          The API counts questions per visitor per day (using a one-way hash of the IP address that changes daily) to
+          cap costs.
         </p>
       </section>
 
@@ -59,7 +130,8 @@ export default function PrivacyPage() {
         <p className="muted">
           The public demo is served as static files by GitHub Pages. GitHub may log standard technical information
           (such as IP address and browser type) when serving pages, under GitHub&apos;s privacy statement. Sentia
-          itself adds no analytics, cookies, or tracking scripts.
+          itself adds no cookies, third-party analytics or tracking scripts; its only usage measurement is the opt-in
+          anonymous counts described above.
         </p>
       </section>
 

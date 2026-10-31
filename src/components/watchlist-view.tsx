@@ -10,7 +10,7 @@ import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import type { PriceAlert } from "@/lib/types";
 import { isValidSymbol, normalizeSymbol, parseAmount } from "@/lib/validation";
-import { DemoPricesBadge, EmptyState, Loading, PageHeader, Panel, Sparkline, StarButton } from "./ui";
+import { DemoPricesBadge, EmptyState, Loading, PageHeader, Panel, QuoteBadge, Sparkline, StarButton } from "./ui";
 
 type Permission = NotificationPermission | "unsupported";
 
@@ -242,6 +242,7 @@ export function WatchlistView() {
                     <div className="stack" style={{ alignItems: "flex-end", gap: 2, minWidth: 84 }}>
                       <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
                       <span className={`small ${change >= 0 ? "gain" : "loss"}`}>{quote ? formatPercent(change, true) : "pending"}</span>
+                      {quote ? <QuoteBadge quote={quote} /> : null}
                     </div>
                     <div className="row gap-sm watch-actions">
                       <button

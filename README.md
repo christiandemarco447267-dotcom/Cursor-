@@ -171,12 +171,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), then launch the workspace at `/app`.
 
-Optional live quotes:
+Optional real quotes, feedback, anonymous usage counts and the AI coach come from the
+small Cloudflare Worker in [`worker/`](worker/README.md). Point the app at it with
+`NEXT_PUBLIC_SENTIA_API_URL` (see [PILOT_SETUP.md](PILOT_SETUP.md) for the full checklist):
 
 ```bash
 cp .env.example .env.local
-# set FINNHUB_API_KEY=...
+# set NEXT_PUBLIC_SENTIA_API_URL=http://127.0.0.1:8787   # e.g. `cd worker && npx wrangler dev`
 ```
+
+Without it everything still works: prices are clearly labelled **Demo**, the coach uses
+its built-in rules, and feedback opens a prefilled email / GitHub issue.
 
 ## Scripts
 

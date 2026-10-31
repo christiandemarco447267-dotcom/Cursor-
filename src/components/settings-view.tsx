@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Cloud, Compass, Download, PartyPopper, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { BarChart3, Cloud, Compass, Download, PartyPopper, RotateCcw, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { analyticsAvailable, setConsent } from "@/lib/analytics";
+import { apiConfigured } from "@/lib/api-config";
+import { useAnalyticsConsent } from "./pilot-prompts";
 import { celebrate, prefersReducedMotion } from "@/lib/celebrate";
 import { useAuth } from "@/lib/auth";
 import { localDayKey } from "@/lib/market";
@@ -27,7 +30,7 @@ function takeReauthNotice(): boolean {
 
 const MAX_IMPORT_BYTES = 1_000_000;
 const IS_STATIC_EXPORT = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
-const HAS_CLIENT_QUOTES = Boolean(process.env.NEXT_PUBLIC_FINNHUB_API_KEY);
+const HAS_API = apiConfigured();
 
 export function SettingsView() {
   const { ready, state, actions, openTour, openProfileSetup, sync } = useApp();
@@ -148,6 +151,7 @@ export function SettingsView() {
       </Panel>
 
       <CelebrationSettings />
+      <AnalyticsSettings />
 
       {cloud ? <AccountSecurity /> : null}
 
@@ -200,7 +204,11 @@ export function SettingsView() {
           )}
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
           {IS_STATIC_EXPORT ? (
-            <li>This static build has no server proxy: prices are {HAS_CLIENT_QUOTES ? "fetched directly from the configured quote provider (simulated as a fallback)" : "simulated in your browser"}.</li>
+            <li>
+              {HAS_API
+                ? "Real prices come from the Sentia API (which keeps the market-data key on the server). If it can't be reached, prices switch to clearly labelled demo prices and orders/alerts pause."
+                : "This build has no live price service, so prices are simulated in your browser and labelled Demo."}
+            </li>
           ) : (
             <>
               <li>Market requests go through a server proxy that keeps any API key server-side.</li>
@@ -293,6 +301,35 @@ function CelebrationSettings() {
       <button type="button" className="btn btn-sm" style={{ width: "fit-content" }} onClick={() => celebrate({ celebrations, haptics })}>
         Preview
       </button>
+    </Panel>
+  );
+}
+
+/** Anonymous usage counts — off until the user opts in. */
+function AnalyticsSettings() {
+  const consent = useAnalyticsConsent();
+  const available = analyticsAvailable();
+  return (
+    <Panel className="stack gap-md">
+      <span className="row gap-sm">
+        <BarChart3 size={18} /> <strong>Usage statistics</strong>
+      </span>
+      <div className="switch-row">
+        <span className="stack" style={{ gap: 2 }}>
+          <span>Share anonymous usage counts</span>
+          <span className="small muted">
+            {available
+              ? "Counts which pages are opened and a few actions (trade placed, thesis created, Time Machine finished, coach asked, feedback sent). Added to daily totals only — no cookies, no IDs, no personal or portfolio data."
+              : "Not available on this build (no Sentia API is configured), so nothing is ever sent."}{" "}
+            <Link href="/privacy">Details</Link>
+          </span>
+        </span>
+        <Switch
+          checked={available && consent === "granted"}
+          label="Share anonymous usage counts"
+          onChange={(v) => available && setConsent(v ? "granted" : "denied")}
+        />
+      </div>
     </Panel>
   );
 }

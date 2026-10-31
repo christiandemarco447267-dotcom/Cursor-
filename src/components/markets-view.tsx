@@ -8,7 +8,8 @@ import { DEMO_UNIVERSE, nameForSymbol, priceSourceOf } from "@/lib/market";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { normalizeSymbol } from "@/lib/validation";
-import { DemoPricesBadge, Loading, Panel, PageHeader, Sparkline, StarButton } from "./ui";
+import { formatAsOfET } from "@/lib/live-quotes";
+import { DemoPricesBadge, Loading, Panel, PageHeader, QuoteBadge, Sparkline, StarButton } from "./ui";
 
 export function MarketsView() {
   const { ready, state, quotes, market, refreshMarket } = useApp();
@@ -22,15 +23,17 @@ export function MarketsView() {
 
   if (!ready || !state) return <Loading />;
 
+  const session = market.session ?? (market.status === "open" ? "open" : "closed");
   const statusText =
-    market.status === "open"
-      ? "Live · market open"
-      : market.status === "closed"
-        ? "Live · market closed"
-        : market.status === "error"
-          ? "Market unavailable — showing last data"
+    market.feed === "live"
+      ? `Real prices · ${session === "open" ? "market open" : session === "pre" ? "pre-market" : session === "post" ? "after hours" : "market closed"}`
+      : market.status === "error"
+        ? "Market unavailable — showing last data"
+        : market.status === "loading"
+          ? "Loading prices…"
           : "Simulated prices · auto-updating every 15s";
   const simulated = priceSourceOf(market) === "demo" || priceSourceOf(market) === "mixed";
+  const missing = market.missing ?? [];
 
   return (
     <div className="stack gap-lg animate-in">
@@ -49,13 +52,20 @@ export function MarketsView() {
           <span className={`pill ${market.status === "error" ? "" : "pill-primary"}`}>{statusText}</span>
           <DemoPricesBadge />
         </span>
-        {market.updatedAt ? <span className="small dim">Updated {new Date(market.updatedAt).toLocaleTimeString()}</span> : null}
+        {market.updatedAt ? <span className="small dim">Updated {formatAsOfET(market.updatedAt)}</span> : null}
         {simulated ? (
           <p className="small muted" style={{ flexBasis: "100%", margin: 0 }}>
-            These prices are simulated for practice and are not real market data. Self-hosted builds can enable live
-            quotes with a Finnhub key.
+            {market.demoReason === "unreachable"
+              ? "The live price service can't be reached right now, so these prices are simulated. Pending orders and price alerts are paused until real prices return."
+              : "These prices are simulated for practice and are not real market data."}
           </p>
-        ) : null}
+        ) : (
+          <p className="small muted" style={{ flexBasis: "100%", margin: 0 }}>
+            Each price shows its source: <strong>Live</strong> (current), <strong>Delayed</strong> (real, may lag), times in New York
+            (ET). US market holidays aren&apos;t detected by the clock fallback.
+            {missing.length ? ` No price available for: ${missing.join(", ")}.` : ""}
+          </p>
+        )}
       </Panel>
 
       <Panel>
@@ -73,7 +83,8 @@ export function MarketsView() {
                 <Sparkline symbol={symbol} />
                 <div className="stack" style={{ alignItems: "flex-end", gap: 2 }}>
                   <strong>{quote ? formatCurrency(quote.price) : "—"}</strong>
-                  <span className={`small ${change >= 0 ? "gain" : "loss"}`}>{formatPercent(change, true)}</span>
+                  <span className={`small ${change >= 0 ? "gain" : "loss"}`}>{quote ? formatPercent(change, true) : "no price"}</span>
+                  {quote ? <QuoteBadge quote={quote} /> : null}
                 </div>
                 <div className="row gap-sm">
                   <StarButton symbol={symbol} />
