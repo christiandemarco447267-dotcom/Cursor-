@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/analytics";
+
 import { useMemo, useState } from "react";
 import { FlaskConical, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate, formatNumber, formatPercent, formatSignedCurrency } from "@/lib/format";
@@ -41,6 +43,7 @@ export function ThesisView() {
     if (!rationale.trim()) return setError("Add your rationale.");
 
     actions.addThesis({ symbol: normalizeSymbol(symbol), title, rationale, risks, conviction });
+    track("thesis_created");
     setSymbol("");
     setTitle("");
     setRationale("");

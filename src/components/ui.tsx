@@ -2,8 +2,10 @@
 
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { BellRing, CircleCheck, CircleX, FlaskConical, Star, X } from "lucide-react";
+import { BellRing, CircleCheck, CircleX, Clock3, FlaskConical, Radio, Star, X } from "lucide-react";
+import { quoteBadge } from "@/lib/live-quotes";
 import { priceSourceOf, sparklineForSymbol } from "@/lib/market";
+import type { Quote } from "@/lib/types";
 import { useApp } from "@/lib/store";
 
 export function Loading({ label = "Loading your workspace…" }: { label?: string }) {
@@ -88,23 +90,40 @@ export function Sparkline({ symbol, width = 88, height = 30 }: { symbol: string;
 
 /**
  * Small "Demo prices" badge, shown only while market data is simulated (no live
- * source — always the case on the static Pages build). Renders nothing for a
- * fully live feed.
+ * service configured, or the configured one is unreachable). Renders nothing for
+ * real prices — each quote then carries its own Live / Delayed badge.
  */
 export function DemoPricesBadge({ className }: { className?: string }) {
   const { market } = useApp();
   const source = priceSourceOf(market);
   if (source !== "demo" && source !== "mixed") return null;
-  const text = source === "demo" ? "Demo prices" : "Some prices simulated";
+  const unreachable = market.demoReason === "unreachable";
+  const text = source === "mixed" ? "Some prices simulated" : unreachable ? "Demo prices · live offline" : "Demo prices";
   const detail =
-    source === "demo"
-      ? "Prices are simulated for practice. They are not real market data."
-      : "Live quotes were unavailable for some symbols, so those prices are simulated.";
+    source === "mixed"
+      ? "Live quotes were unavailable for some symbols, so those prices are simulated."
+      : unreachable
+        ? "The live price service couldn't be reached, so prices are simulated for now. Orders and alerts are paused until live prices return."
+        : "Prices are simulated for practice. They are not real market data.";
   return (
     <span className={clsx("pill pill-demo", className)} role="status" title={detail}>
       <FlaskConical size={13} />
       {text}
       <span className="sr-only">. {detail}</span>
+    </span>
+  );
+}
+
+/** Per-quote data badge: Live / Delayed / Demo, with an "as of" time (America/New_York) on hover and for screen readers. */
+export function QuoteBadge({ quote, showTime = false, className }: { quote: Quote | undefined; showTime?: boolean; className?: string }) {
+  const badge = quoteBadge(quote);
+  const time = showTime ? badge.when : "";
+  return (
+    <span className={clsx("quote-badge", `quote-badge-${badge.kind}`, className)} title={badge.detail}>
+      {badge.kind === "live" ? <Radio size={11} /> : badge.kind === "delayed" ? <Clock3 size={11} /> : <FlaskConical size={11} />}
+      {badge.label}
+      {time ? <span className="quote-badge-time"> · {time}</span> : null}
+      <span className="sr-only">. {badge.detail}</span>
     </span>
   );
 }

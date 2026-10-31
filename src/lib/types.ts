@@ -137,6 +137,8 @@ export const PerfSnapshotSchema = z.object({
   spy: z.number().positive().max(LIMITS.maxPrice),
   /** Net external cash flow (deposits − withdrawals) since the previous snapshot. */
   flow: z.number().min(-LIMITS.maxMoney).max(LIMITS.maxMoney).default(0),
+  /** Price feed the snapshot was valued with. Absent on older snapshots, which were all simulated ("demo"). */
+  src: z.enum(["live", "demo"]).optional(),
 });
 export type PerfSnapshot = z.infer<typeof PerfSnapshotSchema>;
 
@@ -213,7 +215,8 @@ export const AppStateSchema = z.object({
 export type AppState = z.infer<typeof AppStateSchema>;
 
 // Market data (never persisted).
-export type QuoteSource = "live" | "demo";
+/** "live" = real quote, current; "delayed" = real quote that may lag the market; "demo" = simulated. */
+export type QuoteSource = "live" | "delayed" | "demo";
 
 export type Quote = {
   symbol: string;
@@ -221,6 +224,12 @@ export type Quote = {
   changePercent: number;
   previousClose: number;
   source: QuoteSource;
+  /** Dollar change vs previous close, when the provider reports it. */
+  change?: number;
+  /** When the price was set (ISO), for real quotes. */
+  asOf?: string;
+  /** Which provider supplied a real quote (e.g. "finnhub", "yahoo"). */
+  provider?: string;
   error?: string;
 };
 

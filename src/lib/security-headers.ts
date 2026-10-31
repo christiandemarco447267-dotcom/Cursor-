@@ -6,7 +6,17 @@
  * app does not use a per-request nonce. `'unsafe-eval'` is only permitted in
  * development, where the dev bundler relies on it.
  */
-export function getSecurityHeaders(isDev = process.env.NODE_ENV !== "production"): Record<string, string> {
+export function getSecurityHeaders(
+  isDev = process.env.NODE_ENV !== "production",
+  apiUrl = process.env.NEXT_PUBLIC_SENTIA_API_URL ?? "",
+): Record<string, string> {
+  // The optional Sentia API (Cloudflare Worker) for real quotes, feedback, usage counts and the AI coach.
+  let apiOrigin = "";
+  try {
+    apiOrigin = apiUrl ? new URL(apiUrl).origin : "";
+  } catch {
+    apiOrigin = "";
+  }
   // Google hosts serve reCAPTCHA (required by Firebase phone auth / SMS two-step verification).
   const scriptSrc = [
     "'self'",
@@ -26,9 +36,9 @@ export function getSecurityHeaders(isDev = process.env.NODE_ENV !== "production"
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     `script-src ${scriptSrc}`,
-    // 'self' for the API proxy; finnhub.io for optional client-side realtime quotes;
+    // 'self' for the API proxy; the Sentia API origin when configured;
     // Google/Firebase endpoints for Firebase Auth + Firestore (accounts & cloud sync).
-    "connect-src 'self' https://finnhub.io https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com",
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""} https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com`,
     // Firebase Auth helper iframe + reCAPTCHA challenge frames.
     "frame-src 'self' https://*.firebaseapp.com https://www.google.com https://recaptcha.google.com",
     "form-action 'self'",

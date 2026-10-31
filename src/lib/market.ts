@@ -101,7 +101,8 @@ export type PriceSource = "pending" | "live" | "mixed" | "demo";
 export function priceSourceOf(market: { status: string; quotes: Pick<Quote, "source">[] }): PriceSource {
   if (market.status === "demo") return "demo";
   if (market.quotes.length === 0) return market.status === "loading" ? "pending" : "demo";
-  const live = market.quotes.filter((q) => q.source === "live").length;
+  // Real quotes (live or delayed) count as live data.
+  const live = market.quotes.filter((q) => q.source !== "demo").length;
   if (live === 0) return "demo";
   return live === market.quotes.length ? "live" : "mixed";
 }

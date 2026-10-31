@@ -57,10 +57,38 @@ export function capSnapshots(snapshots: PerfSnapshot[], max: number = LIMITS.max
   return list;
 }
 
+export type FeedKind = "live" | "demo";
+
+/** The feed a snapshot was valued with (older snapshots predate real prices and were simulated). */
+export function snapshotFeed(snapshot: Pick<PerfSnapshot, "src">): FeedKind {
+  return snapshot.src ?? "demo";
+}
+
+/** "live" when the quotes are real (live or delayed), else "demo". */
+export function quotesFeed(quotes: Pick<Quote, "source">[]): FeedKind {
+  return quotes.some((q) => q.source !== "demo") ? "live" : "demo";
+}
+
+/**
+ * Snapshots from the current price feed only: the trailing run that shares the
+ * newest snapshot's feed. Simulated and real prices are never chained into one
+ * performance line (that would show a fake jump when the feed changes).
+ */
+export function feedSegment(snapshots: PerfSnapshot[]): PerfSnapshot[] {
+  const last = snapshots[snapshots.length - 1];
+  if (!last) return snapshots;
+  const feed = snapshotFeed(last);
+  let start = snapshots.length - 1;
+  while (start > 0 && snapshotFeed(snapshots[start - 1]) === feed) start -= 1;
+  return start === 0 ? snapshots : snapshots.slice(start);
+}
+
 /** Is a new snapshot due? (none yet, the interval elapsed, or there was account activity since the last one) */
-export function snapshotDue(state: AppState, now: number): boolean {
+export function snapshotDue(state: AppState, now: number, feed?: FeedKind): boolean {
   const last = state.snapshots[state.snapshots.length - 1];
   if (!last) return true;
+  // A change of price feed starts a fresh segment right away.
+  if (feed && snapshotFeed(last) !== feed) return true;
   const lastT = ms(last.t);
   if (now - lastT >= SNAPSHOT_INTERVAL_MS) return true;
   return state.transactions.some((tx) => isActivity(tx) && ms(tx.createdAt) > lastT);
@@ -72,7 +100,10 @@ export function snapshotDue(state: AppState, now: number): boolean {
  * so a half-loaded feed never records a misleading value.
  */
 export function maybeRecordSnapshot(state: AppState, quotes: Quote[], now: number = Date.now()): AppState {
-  if (!snapshotDue(state, now)) return state;
+  const feed = quotesFeed(quotes);
+  if (!snapshotDue(state, now, feed)) return state;
+  // Never value one snapshot with a mix of simulated and real prices.
+  if (quotes.some((q) => (q.source === "demo") !== (feed === "demo"))) return state;
   const prices = quoteMap(quotes);
   const spy = prices.get(BENCHMARK_SYMBOL);
   if (!spy || !(spy.price > 0)) return state;
@@ -82,11 +113,14 @@ export function maybeRecordSnapshot(state: AppState, quotes: Quote[], now: numbe
   const last = state.snapshots[state.snapshots.length - 1];
   // Never stamp a snapshot before activity it already includes (e.g. a fill made a moment ago).
   const latestActivity = state.transactions.reduce((m, tx) => (isActivity(tx) ? Math.max(m, ms(tx.createdAt)) : m), 0);
+  const sameFeed = last && snapshotFeed(last) === feed;
   const snapshot: PerfSnapshot = {
     t: new Date(Math.max(now, latestActivity)).toISOString(),
     value: round2(summary.total),
     spy: spy.price,
-    flow: netFlowSince(state.transactions, last?.t ?? null),
+    // The first point of a new feed segment is its own baseline (flows before it don't apply).
+    flow: last && sameFeed ? netFlowSince(state.transactions, last.t) : 0,
+    src: feed,
   };
   return commit({ ...state, snapshots: capSnapshots([...state.snapshots, snapshot]) });
 }
@@ -177,11 +211,14 @@ export function livePoint(state: AppState, quotes: Quote[], now: number = Date.n
   const spy = quoteMap(quotes).get(BENCHMARK_SYMBOL);
   const last = state.snapshots[state.snapshots.length - 1];
   if (!spy || !last || now <= ms(last.t)) return null;
+  // Don't draw a "now" point priced on a different feed than the saved line.
+  if (snapshotFeed(last) !== quotesFeed(quotes)) return null;
   return {
     t: new Date(now).toISOString(),
     value: round2(summarizePortfolio(state, quotes).total),
     spy: spy.price,
     flow: netFlowSince(state.transactions, last.t),
+    src: snapshotFeed(last),
   };
 }
 
@@ -287,7 +324,8 @@ export function seriesWithGhost(
 }
 
 /** Time-weighted return over the trailing window (for league summaries). Null without two snapshots in range. */
-export function trailingReturnPct(snapshots: PerfSnapshot[], now: number, days = 30): number | null {
+export function trailingReturnPct(allSnapshots: PerfSnapshot[], now: number, days = 30): number | null {
+  const snapshots = feedSegment(allSnapshots);
   const since = now - days * 86_400_000;
   // Start from the last snapshot at/before the window start, if any, so the full window is covered.
   let startIdx = snapshots.findIndex((s) => ms(s.t) >= since);

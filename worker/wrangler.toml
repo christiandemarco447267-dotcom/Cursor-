@@ -1,0 +1,26 @@
+# Sentia pilot backend — Cloudflare Worker.
+# Step-by-step deploy instructions: see README.md in this folder.
+name = "sentia-api"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+# Plain (non-secret) settings. Secrets (API keys, admin token, webhook) are set with
+# `npx wrangler secret put NAME` and never live in this file.
+[vars]
+# Comma-separated list of websites allowed to call this API (besides localhost for testing).
+ALLOWED_ORIGINS = "https://christiandemarco447267-dotcom.github.io"
+# AI coach provider: "openai" or "anthropic". Model is optional (cheap defaults are built in).
+COACH_PROVIDER = "openai"
+COACH_MODEL = ""
+# Per-visitor and whole-site daily caps on AI coach questions (cost control).
+COACH_DAILY_LIMIT_PER_IP = "30"
+COACH_DAILY_LIMIT_TOTAL = "500"
+# Optional: restrict /quote to these tickers (comma-separated). Empty = any well-formed US ticker.
+SYMBOL_ALLOWLIST = ""
+
+# Storage for feedback, rate-limit counters and daily usage counts.
+# Create it once with:  npx wrangler kv namespace create SENTIA_KV
+# then paste the id it prints below (replacing the placeholder).
+[[kv_namespaces]]
+binding = "SENTIA_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, Trophy } from "lucide-react";
-import { benchmarkStats, livePoint, seriesWithGhost, type BenchmarkPoint, type BenchmarkStats } from "@/lib/benchmark";
+import { benchmarkStats, feedSegment, livePoint, seriesWithGhost, type BenchmarkPoint, type BenchmarkStats } from "@/lib/benchmark";
 import { formatDate, formatPercent } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import { Panel } from "./ui";
@@ -16,9 +16,11 @@ export function useBenchmark(): BenchmarkStats | null {
     // eslint-disable-next-line react-hooks/purity -- the live point is "now" by design; recomputed on each quote update
     const now = Date.now();
     const live = livePoint(state, quotes, now);
-    const stats = benchmarkStats(state.snapshots, state.transactions, live);
+    // Only the current price feed's snapshots: demo and real prices are never chained together.
+    const snapshots = feedSegment(state.snapshots);
+    const stats = benchmarkStats(snapshots, state.transactions, live);
     // Merge the "If you never sold" ghost line (present only when there were sells).
-    return { ...stats, points: seriesWithGhost(state.snapshots, state.transactions, quotes, live, now) };
+    return { ...stats, points: seriesWithGhost(snapshots, state.transactions, quotes, live, now) };
   }, [state, quotes]);
 }
 

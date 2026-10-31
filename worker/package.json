@@ -1,0 +1,19 @@
+{
+  "name": "sentia-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sentia pilot backend: real quotes, feedback, anonymous usage counts and the AI coach (Cloudflare Worker).",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261023.1",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.156.0"
+  }
+}

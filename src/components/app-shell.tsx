@@ -34,6 +34,8 @@ import { OnboardingTour } from "./onboarding-tour";
 import { DemoPricesBadge, Loading, ToastHost } from "./ui";
 import { ProfileSetup } from "./profile-setup";
 import { DisciplineWatcher } from "./discipline-card";
+import { FeedbackButton } from "./feedback-sheet";
+import { AnalyticsNotice, MicroSurvey, PageViewTracker } from "./pilot-prompts";
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ size?: number }>; section: string };
 
@@ -145,6 +147,7 @@ function Sidebar() {
       <div className="stack gap-sm" style={{ marginTop: "auto", padding: "0 4px 6px", alignItems: "flex-start" }}>
         <SyncBadge />
         <DemoPricesBadge />
+        <FeedbackButton />
       </div>
       <ProfileChip />
     </aside>
@@ -249,6 +252,7 @@ function MobileDrawer({
           </button>
         </div>
         <NavLinks onNavigate={onClose} />
+        <FeedbackButton className="drawer-feedback" onOpen={onClose} />
         <ProfileChip onNavigate={onClose} />
       </aside>
     </div>
@@ -304,6 +308,11 @@ function Shell({ children }: { children: React.ReactNode }) {
       <OnboardingTour />
       <ToastHost />
       <DisciplineWatcher />
+      <PageViewTracker />
+      <div className="pilot-stack">
+        <AnalyticsNotice />
+        <MicroSurvey />
+      </div>
     </>
   );
 }

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Cloudflare Worker has its own toolchain (worker/package.json).
+    "worker/node_modules/**",
+    "worker/.wrangler/**",
   ]),
 ]);
 

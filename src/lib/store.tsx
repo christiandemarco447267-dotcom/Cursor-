@@ -9,7 +9,12 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { BENCHMARK_SYMBOL, DEMO_UNIVERSE, demoQuote, demoSnapshot, marketStatusNow } from "./market";
+import { BENCHMARK_SYMBOL, DEMO_UNIVERSE, demoSnapshot } from "./market";
+import { apiConfigured } from "./api-config";
+import { track } from "./analytics";
+import { feedChangeNotice, type Feed } from "./feed-notice";
+import { fetchLiveQuotes, type WorkerMarketState } from "./live-quotes";
+import { snapshotFeed } from "./benchmark";
 import * as alertOps from "./alerts";
 import * as orderOps from "./orders";
 import * as replayOps from "./time-machine";
@@ -36,47 +41,12 @@ import { AUTOSAVE_DEBOUNCE_MS, createDebouncedSaver, isRemoteNewer, type Debounc
 import { loadCloudState, saveCloudState, watchCloudState } from "./cloud-store";
 import { normalizeSymbol } from "./validation";
 
-// ---- Realtime market config ----------------------------------------------
+// ---- Market config ---------------------------------------------------------
 
-// How often quotes auto-refresh (ms). Kept snappy so changes reflect promptly.
+// How often quotes auto-refresh (ms). The Sentia API caches ~15s during market hours.
 const MARKET_REFRESH_MS = 15_000;
-// Optional public key for browser-side realtime quotes (works on static hosting).
-const CLIENT_FINNHUB_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
 // Set on the static export build so we skip the (non-existent) /api route.
 const IS_STATIC_EXPORT = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
-
-function round2(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-/** Fetch realtime quotes directly from Finnhub in the browser (per-symbol graceful fallback). */
-async function fetchClientQuotes(symbols: string[], key: string): Promise<MarketState> {
-  const list = symbols.length ? symbols : DEMO_UNIVERSE.map((e) => e.symbol);
-  const quotes: Quote[] = await Promise.all(
-    list.map(async (symbol) => {
-      try {
-        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${key}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as { c?: number; pc?: number };
-        if (!data.c || !data.pc) throw new Error("no data");
-        const changePercent = ((data.c - data.pc) / data.pc) * 100;
-        return {
-          symbol,
-          price: round2(data.c),
-          previousClose: round2(data.pc),
-          changePercent: round2(changePercent),
-          source: "live" as const,
-        };
-      } catch {
-        return demoQuote(symbol);
-      }
-    }),
-  );
-  const anyLive = quotes.some((q) => q.source === "live");
-  return { status: anyLive ? marketStatusNow() : "demo", quotes, updatedAt: new Date().toISOString() };
-}
 
 // ---- Module store (single source of truth, survives re-renders) ----------
 //
@@ -421,6 +391,7 @@ function stepReplay(by: number | "end"): ReplayResult | null {
     return r.state;
   });
   const done = finished as ReplayResult | null;
+  if (done) track("time_machine_finished");
   if (done && done.returnPct > done.spyReturnPct) {
     celebrateNow("You beat the S&P 500", `Replay return ${done.returnPct.toFixed(1)}% vs SPY ${done.spyReturnPct.toFixed(1)}%.`);
   }
@@ -434,7 +405,32 @@ export type MarketState = {
   quotes: Quote[];
   updatedAt?: string;
   error?: string;
+  /** Where prices come from: real quotes ("live", which includes delayed ones) or simulated ("demo"). */
+  feed?: Feed;
+  /** Why the feed is demo: no live service configured, or the configured one is unreachable. */
+  demoReason?: "not-configured" | "unreachable";
+  /** Exchange session reported by the live service. */
+  session?: WorkerMarketState;
+  /** Symbols the live service couldn't price (shown without a price, never with a simulated one). */
+  missing?: string[];
 };
+
+// What the user last saw, so a change of price source can be announced (module-level: survives re-renders).
+let lastFeed: { feed: Feed; quotes: Quote[] } | null = null;
+
+function announceFeed(next: MarketState) {
+  if (!current || !next.feed) return;
+  const prev = lastFeed
+    ? { feed: lastFeed.feed, quotes: lastFeed.quotes }
+    : (() => {
+        // First load this session: compare against the newest saved snapshot, if any.
+        const last = current.snapshots[current.snapshots.length - 1];
+        return last ? { feed: snapshotFeed(last), total: last.value } : null;
+      })();
+  const notice = feedChangeNotice(current, prev, { feed: next.feed, quotes: next.quotes, reason: next.demoReason });
+  lastFeed = { feed: next.feed, quotes: next.quotes };
+  if (notice) pushToast(notice);
+}
 
 // ---- Context ------------------------------------------------------------
 
@@ -557,35 +553,63 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
   // which is the pattern React recommends for syncing with an external system.
   const refreshMarket = useCallback(() => {
     const symbols = symbolsKey ? symbolsKey.split(",") : [];
-    const simulate = () => {
-      const snapshot = demoSnapshot(allSymbolsKey ? allSymbolsKey.split(",") : symbols);
-      setMarket({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
+    const allSymbols = allSymbolsKey ? allSymbolsKey.split(",") : symbols;
+    const publish = (next: MarketState) => {
+      announceFeed(next);
+      setMarket(next);
+    };
+    const simulate = (demoReason: MarketState["demoReason"]) => {
+      const snapshot = demoSnapshot(allSymbols);
+      publish({ status: "demo", quotes: snapshot.quotes, updatedAt: snapshot.updatedAt, feed: "demo", demoReason });
     };
 
-    // Realtime path: a public market-data key lets the client fetch live quotes
-    // directly (works even on static hosting). Falls back to the simulated feed.
-    if (CLIENT_FINNHUB_KEY) {
-      fetchClientQuotes(symbols, CLIENT_FINNHUB_KEY)
-        .then((snapshot) => setMarket(snapshot))
-        .catch(simulate);
+    // Real quotes through the Sentia API (the Cloudflare Worker). The API key stays
+    // on the server; symbols it can't price stay unpriced rather than simulated.
+    if (apiConfigured()) {
+      fetchLiveQuotes(allSymbols)
+        .then((live) =>
+          publish({
+            status: live.marketState === "open" ? "open" : "closed",
+            quotes: live.quotes,
+            updatedAt: live.asOf,
+            feed: "live",
+            session: live.marketState,
+            missing: live.missing,
+          }),
+        )
+        .catch(() => simulate("unreachable"));
       return;
     }
 
-    // Static export has no /api route — skip the request and simulate directly.
+    // Static export without an API: simulated prices, clearly labelled.
     if (IS_STATIC_EXPORT) {
-      simulate();
+      simulate("not-configured");
       return;
     }
 
+    // Server builds: the app's own /api/market route (keeps any key server-side).
     fetch(`/api/market?symbols=${encodeURIComponent(symbolsKey)}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(`Market request failed (${res.status})`);
         return (await res.json()) as MarketSnapshot;
       })
       .then((snapshot) => {
-        setMarket({ status: snapshot.status, quotes: snapshot.quotes, updatedAt: snapshot.updatedAt });
+        const real = snapshot.quotes.filter((q) => q.source !== "demo");
+        if (snapshot.status === "demo" || real.length === 0) {
+          simulate("not-configured");
+          return;
+        }
+        // Never mix: drop any simulated fallbacks the route added for symbols it couldn't price.
+        const realSymbols = new Set(real.map((q) => q.symbol));
+        publish({
+          status: snapshot.status,
+          quotes: real.map((q) => ({ ...q, asOf: q.asOf ?? snapshot.updatedAt })),
+          updatedAt: snapshot.updatedAt,
+          feed: "live",
+          missing: snapshot.quotes.filter((q) => !realSymbols.has(q.symbol)).map((q) => q.symbol),
+        });
       })
-      .catch(simulate);
+      .catch(() => simulate("not-configured"));
   }, [symbolsKey, allSymbolsKey]);
 
   // Poll once state exists. Keyed on presence (not the state object) so ordinary
@@ -602,10 +626,13 @@ export function AppProvider({ mode: storageMode, children }: { mode: StorageMode
   // Each price update (and each state change, e.g. a newly placed order) runs the
   // fill engine, price alerts and performance snapshotting. Idempotent: reads and
   // writes the module store, so a re-run with the same quotes is a no-op.
+  // While a configured live service is unreachable we show demo prices, but orders,
+  // alerts and performance snapshots pause so nothing executes on simulated prices.
+  const tickPaused = market.demoReason === "unreachable";
   useEffect(() => {
-    if (!state || market.quotes.length === 0) return;
+    if (!state || market.quotes.length === 0 || tickPaused) return;
     applyMarketTick(market.quotes);
-  }, [state, market.quotes]);
+  }, [state, market.quotes, tickPaused]);
 
   const summary = useMemo(() => (state ? summarizePortfolio(state, market.quotes) : null), [state, market.quotes]);
 

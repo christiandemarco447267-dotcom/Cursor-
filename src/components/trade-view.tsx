@@ -8,13 +8,16 @@ import { MOOD_INFO } from "@/lib/moods";
 import { MOODS, type Mood } from "@/lib/types";
 import { ShareTradeButton } from "./share-card";
 import { formatCurrency, formatNumber, formatRelativeDay } from "@/lib/format";
+import { track } from "@/lib/analytics";
+import { formatAsOfET } from "@/lib/live-quotes";
 import { DEMO_UNIVERSE, demoQuote, nameForSymbol, priceSourceOf } from "@/lib/market";
+import { resolveMarketFill } from "@/lib/market-fill";
 import { orderCondition, orderLabel } from "@/lib/orders";
 import { quoteMap } from "@/lib/portfolio";
 import { useApp } from "@/lib/store";
 import { isValidSymbol, normalizeSymbol, parseAmount } from "@/lib/validation";
 import type { PendingOrder } from "@/lib/types";
-import { EmptyState, Loading, Panel, PageHeader, StarButton } from "./ui";
+import { EmptyState, Loading, Panel, PageHeader, QuoteBadge, StarButton } from "./ui";
 
 type Mode = "buy" | "sell";
 type OrderKind = "market" | "limit" | "stop";
@@ -26,8 +29,15 @@ const ORDER_KINDS: { key: OrderKind; label: string }[] = [
 ];
 
 /** One-line explanation of what the selected order does. */
-function orderHelp(mode: Mode, kind: OrderKind): string {
-  if (kind === "market") return mode === "buy" ? "Buys now at the price you enter." : "Sells now at the price you enter.";
+function orderHelp(mode: Mode, kind: OrderKind, live: boolean): string {
+  if (kind === "market") {
+    if (live) {
+      return mode === "buy"
+        ? "Buys now at the live market price. The price box is optional — set it as a limit and the order won't fill above it."
+        : "Sells now at the live market price. The price box is optional — set it as a limit and the order won't fill below it.";
+    }
+    return mode === "buy" ? "Buys now at the price you enter (prices are simulated)." : "Sells now at the price you enter (prices are simulated).";
+  }
   if (kind === "limit") {
     return mode === "buy"
       ? "Buy limit: waits, then buys once the price falls to your limit or lower."
@@ -61,24 +71,31 @@ export function TradeView() {
   // feed isn't quoting yet (e.g. a new ticker typed here) gets the same demo quote it
   // will be valued at once held, so the "use market price" shortcut always matches.
   const simulatedFeed = priceSourceOf(market) === "demo";
+  const liveFeed = market.feed === "live";
   const quote = prices.get(normalized) ?? (simulatedFeed && isValidSymbol(normalized) ? demoQuote(normalized) : undefined);
+  // On the live feed a market order needs a real quote for this symbol; it never falls back to a typed or simulated price.
+  const liveQuote = quote && quote.source !== "demo" ? quote : undefined;
+  const liveMarket = kind === "market" && liveFeed;
   const held = state.holdings.find((h) => h.symbol.toUpperCase() === normalized);
   const sharesNum = parseAmount(shares);
   const priceNum = parseAmount(price);
-  const estimated = sharesNum !== null && priceNum !== null ? sharesNum * priceNum : null;
-  // Market orders execute at the price entered; flag one far from the current quote.
+  // Price the order would execute at: the live quote for live market orders, otherwise the typed price.
+  const execPrice = liveMarket ? (liveQuote?.price ?? null) : priceNum;
+  const estimated = sharesNum !== null && execPrice !== null ? sharesNum * execPrice : null;
+  // Demo market orders execute at the price entered; flag one far from the current quote.
   const deviationPct =
-    kind === "market" && quote && priceNum !== null && priceNum > 0 ? ((priceNum - quote.price) / quote.price) * 100 : null;
+    kind === "market" && !liveFeed && quote && priceNum !== null && priceNum > 0 ? ((priceNum - quote.price) / quote.price) * 100 : null;
+  const liveFill = liveMarket && liveQuote ? resolveMarketFill(mode, priceNum, liveQuote) : null;
   const farFromMarket = deviationPct !== null && Math.abs(deviationPct) >= 5;
 
   // Bias Radar nudges for the trade being typed (gentle, never blocking).
   const nudges =
-    kind === "market" && isValidSymbol(normalized) && sharesNum !== null && sharesNum > 0 && priceNum !== null && priceNum > 0
+    kind === "market" && isValidSymbol(normalized) && sharesNum !== null && sharesNum > 0 && execPrice !== null && execPrice > 0
       ? previewTradeBiases(state.transactions, {
           side: mode,
           symbol: normalized,
           shares: sharesNum,
-          price: priceNum,
+          price: execPrice,
           dayChange: quote?.changePercent,
           avgCost: held?.avgCost,
         })
@@ -101,17 +118,22 @@ export function TradeView() {
       setError("Enter a positive number of shares.");
       return;
     }
-    if (priceNum === null || priceNum <= 0) {
+    if (price.trim() && (priceNum === null || priceNum <= 0)) {
+      setError(liveMarket ? "Enter a limit price above $0, or leave it empty to fill at the market." : "Enter a price per share above $0.");
+      return;
+    }
+    if (!liveMarket && (priceNum === null || priceNum <= 0)) {
       setError(kind === "market" ? "Enter a price per share above $0." : `Enter a ${kind} price above $0.`);
       return;
     }
 
-    if (kind !== "market") {
+    if (kind !== "market" && priceNum !== null) {
       try {
         actions.placeOrder({ symbol: normalized, side: mode, type: kind, shares: sharesNum, triggerPrice: priceNum });
         setNotice(
           `${orderLabel({ side: mode, type: kind })} order placed: ${formatNumber(sharesNum)} ${normalized}, ${orderCondition({ side: mode, type: kind, triggerPrice: priceNum })}.`,
         );
+        track("trade_placed");
         setShares("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Order could not be placed.");
@@ -119,15 +141,27 @@ export function TradeView() {
       return;
     }
 
+    if (liveMarket && !liveQuote) {
+      setError(`No live price for ${normalized} right now, so a market order can't fill. Try again shortly or place a limit order.`);
+      return;
+    }
+    const fill = resolveMarketFill(mode, priceNum, liveMarket ? liveQuote : undefined);
+    if (!fill.ok) {
+      setError(fill.error);
+      return;
+    }
+    const at = fill.basis === "live" ? ` (live price${liveQuote?.asOf ? `, as of ${formatAsOfET(liveQuote.asOf)}` : ""})` : "";
+
     try {
       const meta = { mood, dayChange: quote?.changePercent };
       if (mode === "buy") {
-        actions.buy({ symbol: normalized, shares: sharesNum, price: priceNum, ...meta });
-        setNotice(`Bought ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(priceNum)}.`);
+        actions.buy({ symbol: normalized, shares: sharesNum, price: fill.price, ...meta });
+        setNotice(`Bought ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(fill.price)}${at}.`);
       } else {
-        actions.sell({ symbol: normalized, shares: sharesNum, price: priceNum, ...meta });
-        setNotice(`Sold ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(priceNum)}.`);
+        actions.sell({ symbol: normalized, shares: sharesNum, price: fill.price, ...meta });
+        setNotice(`Sold ${formatNumber(sharesNum)} ${normalized} at ${formatCurrency(fill.price)}${at}.`);
       }
+      track("trade_placed");
       setShares("");
       setMood(undefined);
     } catch (err) {
@@ -138,7 +172,7 @@ export function TradeView() {
   const recent = [...state.transactions].slice(-8).reverse();
   const openOrders = state.orders.filter((o) => o.status === "open").reverse();
   const closedOrders = state.orders.filter((o) => o.status !== "open").slice(-6).reverse();
-  const priceLabel = kind === "market" ? "Price / share" : kind === "limit" ? "Limit price" : "Stop price";
+  const priceLabel = liveMarket ? "Limit price (optional)" : kind === "market" ? "Price / share" : kind === "limit" ? "Limit price" : "Stop price";
 
   return (
     <div className="stack gap-lg animate-in">
@@ -181,7 +215,7 @@ export function TradeView() {
             ))}
           </div>
           <span className="small muted" style={{ marginTop: -6 }}>
-            {orderHelp(mode, kind)}
+            {orderHelp(mode, kind, liveFeed)}
           </span>
 
           <form className="stack gap-md" onSubmit={submit}>
@@ -209,8 +243,10 @@ export function TradeView() {
                 ))}
               </datalist>
               {normalized ? (
-                <span id="symbol-name" className="small dim">
+                <span id="symbol-name" className="small dim row wrap gap-sm">
                   {nameForSymbol(normalized)}
+                  {isValidSymbol(normalized) ? <QuoteBadge quote={quote} showTime /> : null}
+                  {liveFeed && isValidSymbol(normalized) && !liveQuote ? <span className="loss">No live price yet</span> : null}
                 </span>
               ) : null}
             </div>
@@ -240,11 +276,11 @@ export function TradeView() {
                   inputMode="decimal"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
+                  placeholder={liveMarket ? "Market" : "0.00"}
                 />
                 {quote ? (
                   <button type="button" className="small dim" style={{ textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={useMarketPrice}>
-                    Market {formatCurrency(quote.price)}{kind === "market" ? " — use it" : " — start from it"}
+                    Market {formatCurrency(quote.price)}{liveMarket ? " — set as limit" : kind === "market" ? " — use it" : " — start from it"}
                   </button>
                 ) : null}
               </div>
@@ -253,9 +289,16 @@ export function TradeView() {
             {estimated !== null ? (
               <div className="row between">
                 <span className="muted small">
-                  {kind === "market" ? "Estimated" : `At your ${kind} price, est.`} {mode === "buy" ? "cost" : "proceeds"}
+                  {liveMarket ? "At the live price, est." : kind === "market" ? "Estimated" : `At your ${kind} price, est.`} {mode === "buy" ? "cost" : "proceeds"}
                 </span>
                 <strong>{formatCurrency(estimated)}</strong>
+              </div>
+            ) : null}
+
+            {liveFill && !liveFill.ok ? (
+              <div className="nudge small" role="note">
+                <Lightbulb size={16} />
+                <span>{liveFill.error} Clear the price to fill at the market.</span>
               </div>
             ) : null}
 

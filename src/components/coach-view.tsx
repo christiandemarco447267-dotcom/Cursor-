@@ -2,15 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Sparkles } from "lucide-react";
-import { COACH_DISCLAIMER, ruleBasedCoach, SUGGESTED_QUESTIONS, type CoachProvider, type CoachReply } from "@/lib/coach";
+import { Bot, Cpu, MessageCircle, Send, Sparkles } from "lucide-react";
+import { aiCoachConfigured, askAiCoach, CoachFallback } from "@/lib/ai-coach";
+import { track } from "@/lib/analytics";
+import { COACH_DISCLAIMER, ruleBasedAnswer, SUGGESTED_QUESTIONS, type CoachReply } from "@/lib/coach";
+import { buildCoachContext } from "@/lib/coach-context";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
 
-type Message = { id: number; role: "user" | "coach"; text: string; reply?: CoachReply };
+type Mode = "ai" | "builtin";
+type Message = {
+  id: number;
+  role: "user" | "coach";
+  text: string;
+  reply?: CoachReply;
+  /** Which coach answered (shown on every coach message). */
+  mode?: Mode;
+  /** Why the built-in coach answered a typed question instead of the AI. */
+  note?: string;
+  streaming?: boolean;
+};
 
-// Swap in another CoachProvider (e.g. an LLM-backed one) here; the UI only depends on the interface.
-const PROVIDER: CoachProvider = ruleBasedCoach;
+const AI_ENABLED = aiCoachConfigured();
 
 const WELCOME: Message = {
   id: 0,
@@ -19,7 +32,7 @@ const WELCOME: Message = {
 };
 
 export function CoachView() {
-  const { ready, state, summary } = useApp();
+  const { ready, state, summary, quotes } = useApp();
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,18 +45,38 @@ export function CoachView() {
 
   if (!ready || !state || !summary) return <Loading />;
 
-  const ask = async (question: string) => {
+  const builtIn = (q: string, note?: string): Message => {
+    const reply = ruleBasedAnswer(q, { state, summary });
+    return { id: seq.current++, role: "coach", text: reply.text, reply, mode: "builtin", note };
+  };
+
+  /** Chips always use the instant built-in coach; typed questions use the AI coach when available. */
+  const ask = async (question: string, via: "chip" | "typed" = "typed") => {
     const q = question.trim();
     if (!q || busy) return;
     setInput("");
-    setBusy(true);
+    track("coach_asked");
     const userMsg: Message = { id: seq.current++, role: "user", text: q.slice(0, 300) };
     setMessages((m) => [...m, userMsg]);
+
+    if (via === "chip" || !AI_ENABLED) {
+      setMessages((m) => [...m, builtIn(q)]);
+      return;
+    }
+
+    setBusy(true);
+    const id = seq.current++;
+    setMessages((m) => [...m, { id, role: "coach", text: "", mode: "ai", streaming: true }]);
     try {
-      const reply = await PROVIDER.answer(q, { state, summary });
-      setMessages((m) => [...m, { id: seq.current++, role: "coach", text: reply.text, reply }]);
-    } catch {
-      setMessages((m) => [...m, { id: seq.current++, role: "coach", text: "Sorry, I couldn't work that out. Try one of the suggestions." }]);
+      const context = buildCoachContext({ state, summary, quotes });
+      const text = await askAiCoach(q, context, (soFar) =>
+        setMessages((m) => m.map((msg) => (msg.id === id ? { ...msg, text: soFar } : msg))),
+      );
+      setMessages((m) => m.map((msg) => (msg.id === id ? { ...msg, text, streaming: false } : msg)));
+    } catch (error) {
+      const why = error instanceof CoachFallback ? error.message : "The AI coach is unavailable.";
+      const fallback = builtIn(q, `${why} Answered by the built-in coach instead.`);
+      setMessages((m) => m.map((msg) => (msg.id === id ? { ...fallback, id } : msg)));
     } finally {
       setBusy(false);
     }
@@ -51,21 +84,34 @@ export function CoachView() {
 
   return (
     <div className="stack gap-lg animate-in">
-      <PageHeader title="Ask Sentia" subtitle="A coach that answers from your own paper account. Runs entirely on this device." />
+      <PageHeader
+        title="Ask Sentia"
+        subtitle={
+          AI_ENABLED
+            ? "A coach that answers from your own paper account. Typed questions go to the AI coach; the quick chips answer instantly on this device."
+            : "A coach that answers from your own paper account. Runs entirely on this device."
+        }
+      />
 
       <Panel strong className="stack gap-md">
         <div className="row between wrap gap-sm">
           <strong className="row gap-sm">
             <MessageCircle size={18} /> Coach
           </strong>
-          <span className="pill pill-compact">
-            <Sparkles size={13} /> Rule-based · offline
+          <span className="pill pill-compact" title={AI_ENABLED ? "Typed questions: AI coach. Chips and fallback: built-in coach." : "The AI coach isn't set up on this build."}>
+            <Sparkles size={13} /> {AI_ENABLED ? "AI coach + built-in" : "Built-in coach · offline"}
           </span>
         </div>
         <div className="chat-log" ref={logRef} aria-live="polite">
           {messages.map((m) => (
-            <div key={m.id} className={`bubble ${m.role === "user" ? "bubble-user" : "bubble-coach"}`}>
-              <span>{m.text}</span>
+            <div key={m.id} className={`bubble ${m.role === "user" ? "bubble-user" : "bubble-coach"}`} aria-busy={m.streaming || undefined}>
+              {m.mode ? (
+                <span className={`coach-mode coach-mode-${m.mode}`}>
+                  {m.mode === "ai" ? <Bot size={12} /> : <Cpu size={12} />} {m.mode === "ai" ? "AI coach" : "Built-in coach"}
+                </span>
+              ) : null}
+              <span className="coach-text">{m.text || (m.streaming ? "Thinking…" : "")}</span>
+              {m.note ? <span className="small dim coach-note">{m.note}</span> : null}
               {m.reply?.bullets?.length ? (
                 <ul className="small">
                   {m.reply.bullets.map((b) => (
@@ -87,7 +133,7 @@ export function CoachView() {
         </div>
         <div className="row wrap gap-sm" aria-label="Suggested questions">
           {SUGGESTED_QUESTIONS.map((q) => (
-            <button key={q} type="button" className="chip" onClick={() => void ask(q)} disabled={busy}>
+            <button key={q} type="button" className="chip" onClick={() => void ask(q, "chip")} disabled={busy}>
               {q}
             </button>
           ))}
@@ -113,7 +159,12 @@ export function CoachView() {
         </form>
       </Panel>
 
-      <p className="disclaimer">{COACH_DISCLAIMER} Answers come from simple rules applied to your simulated data.</p>
+      <p className="disclaimer">
+        {COACH_DISCLAIMER}{" "}
+        {AI_ENABLED
+          ? "Built-in answers come from simple rules applied to your data. AI answers are generated by a language model from a short summary of your paper account (holdings, recent trades, scores and theses — never your name or email) and can be wrong; check them against your own numbers."
+          : "Answers come from simple rules applied to your simulated data."}
+      </p>
     </div>
   );
 }
