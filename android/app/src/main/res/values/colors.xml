@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#7C3AED</color>
+    <color name="colorPrimaryDark">#070A1C</color>
+    <color name="colorAccent">#2DD4BF</color>
+    <color name="sentiaBackground">#070A1C</color>
+</resources>

@@ -1,12 +1,18 @@
 {
   "name": "sentia",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Sentia — a focused, professional paper-trading coach (buy/sell simulation, portfolio, theses, insights) with local-first data.",
+  "description": "Sentia \u2014 a focused, professional paper-trading coach (buy/sell simulation, portfolio, theses, insights) with local-first data.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "build:firebase": "node scripts/build-static.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "build:mobile": "node scripts/build-static.mjs --target=native && npx cap sync",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap open android",
+    "cap:ios": "npx cap open ios",
+    "assets:generate": "bash scripts/generate-app-assets.sh",
     "deploy:firebase": "firebase deploy --only hosting,firestore:rules",
     "start": "next start",
     "lint": "eslint",
@@ -16,6 +22,15 @@
     "data:time-machine": "node scripts/fetch-time-machine-data.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "clsx": "^2.1.1",
     "firebase": "^13.1.0",
     "lucide-react": "^1.25.0",
@@ -25,6 +40,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

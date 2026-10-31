@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#070a1c" />
+<title>Offline · Sentia</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #070a1c; color: #ece9ff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: grid; place-items: center; padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+    background: radial-gradient(60% 50% at 20% 10%, rgba(167, 139, 250, 0.22), transparent 70%), radial-gradient(50% 40% at 90% 90%, rgba(45, 212, 191, 0.14), transparent 70%), #070a1c; box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .card { max-width: 420px; width: 100%; padding: 28px 24px; border-radius: 22px; background: rgba(15, 18, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.8); text-align: center; }
+  .mark { display: block; margin: 0 auto; width: 64px; height: 64px; }
+  h1 { font-size: 22px; margin: 16px 0 8px; }
+  p { color: #a9a6c9; line-height: 1.55; margin: 0 0 20px; font-size: 15px; }
+  button { min-height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); color: #fff; font-size: 16px; font-weight: 600;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1); cursor: pointer; }
+  small { display: block; margin-top: 18px; color: #7d7aa0; font-size: 12px; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <svg class="mark" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><path d="M16 42l10-11 8 7 14-16" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>You're offline</h1>
+    <p>Sentia couldn't load this page without a connection. Your paper portfolio is saved on this device and will be right here when you reconnect.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+    <small>Simulated paper trading. No real money. Not investment advice.</small>
+  </main>
+</body>
+</html>

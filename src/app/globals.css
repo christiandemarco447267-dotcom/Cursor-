@@ -2104,3 +2104,156 @@ input[type="radio"] {
     width: auto;
   }
 }
+
+/* =====================================================================
+   Mobile / app-store hardening (Capacitor apps + installed PWA)
+   ===================================================================== */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* No rubber-band bounce / pull-to-refresh glitches revealing a white edge behind the dark theme. */
+html,
+body {
+  overscroll-behavior-y: none;
+  background-color: var(--bg);
+}
+.modal,
+.modal-overlay,
+.drawer,
+.table-wrap {
+  overscroll-behavior: contain;
+}
+
+/* Landscape phones and notches on the side. */
+@media (max-width: 860px) {
+  .main,
+  .container {
+    padding-left: max(16px, var(--safe-left));
+    padding-right: max(16px, var(--safe-right));
+  }
+}
+.topbar {
+  padding-left: max(14px, var(--safe-left)) !important;
+  padding-right: max(14px, var(--safe-right)) !important;
+}
+
+/* Sheets / modals keep clear of the notch and the home indicator / gesture bar. */
+.modal-overlay {
+  padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+}
+.modal {
+  max-height: calc(100dvh - 32px - var(--safe-top) - var(--safe-bottom));
+}
+
+/* Toasts sit above the home indicator. */
+.toast-host {
+  right: calc(20px + var(--safe-right));
+  bottom: calc(20px + var(--safe-bottom));
+}
+@media (max-width: 860px) {
+  .toast-host {
+    left: calc(16px + var(--safe-left));
+    right: calc(16px + var(--safe-right));
+    bottom: calc(16px + var(--safe-bottom));
+    width: auto;
+  }
+  .pilot-stack {
+    left: calc(16px + var(--safe-left));
+    right: calc(16px + var(--safe-right));
+  }
+}
+
+/* Touch screens: 16px text in fields stops iOS zooming in on focus (pinch-zoom still works),
+   and every tappable control is at least 44x44 (Apple HIG; Material asks for 48dp targets incl. spacing). */
+@media (pointer: coarse) {
+  .input,
+  .textarea,
+  .select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  .btn,
+  .btn-sm,
+  .btn-icon,
+  .nav-link,
+  .survey-star {
+    min-height: 44px;
+  }
+  .btn-icon {
+    min-width: 44px;
+    justify-content: center;
+  }
+  .footer-link,
+  .settings-legal a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  /* No grey flash on tap; keep long-press text selection for content. */
+  a,
+  button,
+  [role="button"],
+  [role="switch"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* While the on-screen keyboard is up in the app, give forms room to scroll above it. */
+.keyboard-open .modal {
+  max-height: calc(100dvh - 24px - var(--safe-top));
+}
+.keyboard-open .pilot-stack,
+.keyboard-open .toast-host {
+  display: none;
+}
+.input,
+.textarea,
+.select,
+textarea {
+  scroll-margin-top: calc(80px + var(--safe-top));
+  scroll-margin-bottom: 24px;
+}
+
+/* App shell: no text selection on chrome, no callout on long-press of nav/buttons/images. */
+.is-native .topbar,
+.is-native .drawer,
+.is-native .btn,
+.is-native .nav-link {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* The "Simulated paper trading. No real money. Not investment advice." line. */
+.sim-disclaimer {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fde68a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.danger-zone {
+  border-color: rgba(251, 113, 133, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .drawer,
+  .drawer-overlay,
+  .toast,
+  .pilot-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -197,6 +197,15 @@ its built-in rules, and feedback opens a prefilled email / GitHub issue.
 | `npm run og:image` | Regenerate `public/og-image.png` (social share image) |
 | `npm run data:time-machine` | Re-fetch the bundled Time Machine price data (`src/data/time-machine.json`) |
 
+## Mobile apps (Android & iOS) and PWA
+
+Sentia ships as native Android and iOS apps through [Capacitor](https://capacitorjs.com) (`android/`, `ios/`, `capacitor.config.ts`) and as an installable PWA with an offline fallback.
+
+- `npm run build:mobile` — static export **without** a base path for the apps, then `npx cap sync`. (The GitHub Pages build under `/Cursor-` is separate and unchanged; reproduce it locally with `npm run build:pages`.)
+- `npm run cap:android` / `npm run cap:ios` — open Android Studio / Xcode (iOS needs a Mac with Xcode 26+).
+- `npm run assets:generate` — regenerate every icon and splash image from `public/icon.png` (ImageMagick).
+- Release checklist: [STORE_RELEASE.md](STORE_RELEASE.md) · listing copy & screenshots: [STORE_LISTING.md](STORE_LISTING.md), `store-assets/`.
+
 ## Continuous integration & deployment
 
 - **CI** (`.github/workflows/ci.yml`) runs `npm ci`, typecheck, lint, tests, and a production

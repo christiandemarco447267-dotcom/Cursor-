@@ -8,6 +8,7 @@ compatibility_date = "2025-09-01"
 # `npx wrangler secret put NAME` and never live in this file.
 [vars]
 # Comma-separated list of websites allowed to call this API (besides localhost for testing).
+# The Sentia mobile apps (capacitor://localhost, https://localhost, http://localhost) are always allowed in code.
 ALLOWED_ORIGINS = "https://christiandemarco447267-dotcom.github.io"
 # AI coach provider: "openai" or "anthropic". Model is optional (cheap defaults are built in).
 COACH_PROVIDER = "openai"

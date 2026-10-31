@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     // The Cloudflare Worker has its own toolchain (worker/package.json).
     "worker/node_modules/**",
     "worker/.wrangler/**",
+    // Generated native projects (Capacitor) and their copied web bundle.
+    "android/**",
+    "ios/**",
   ]),
 ]);
 

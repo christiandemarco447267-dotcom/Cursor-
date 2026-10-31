@@ -44,3 +44,14 @@ export function siteUrl(path = "/"): string {
   return new URL(path.replace(/^\/+/, ""), SITE_URL).toString();
 }
 
+
+/** The one-line disclaimer shown at onboarding, in Settings → About, and in store listings. */
+export const SIM_DISCLAIMER = "Simulated paper trading. No real money. Not investment advice.";
+
+/** Public web pages the app stores ask for (privacy policy URL, account-deletion URL, support URL). */
+export const PUBLIC_PAGES = {
+  privacy: "/privacy/",
+  terms: "/terms/",
+  support: "/support/",
+  deleteAccount: "/delete-account/",
+} as const;

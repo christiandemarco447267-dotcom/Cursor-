@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Compass, Lightbulb, NotebookPen, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
+import { SIM_DISCLAIMER } from "@/lib/site";
 import { useApp } from "@/lib/store";
 
 type Step = {
@@ -33,7 +34,7 @@ const STEPS: Step[] = [
   {
     icon: NotebookPen,
     title: "Invest with intent",
-    body: "Write a short thesis for each position so future-you remembers exactly why you bought it — the habit that separates investing from gambling.",
+    body: "Write a short thesis for each position so future-you remembers exactly why you bought it — the habit that separates investing from guessing.",
     href: "/app/thesis",
     cta: "Write a thesis",
   },
@@ -118,6 +119,9 @@ export function OnboardingTour() {
           </h2>
           <p id="tour-body" className="muted">
             {current.body}
+          </p>
+          <p className="sim-disclaimer" role="note">
+            {SIM_DISCLAIMER}
           </p>
         </div>
 

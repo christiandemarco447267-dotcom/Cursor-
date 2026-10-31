@@ -11,6 +11,12 @@ export function SiteFooter() {
         <Link href="/terms" className="footer-link">
           Terms
         </Link>
+        <Link href="/support" className="footer-link">
+          Support
+        </Link>
+        <Link href="/delete-account" className="footer-link">
+          Delete your data
+        </Link>
         <Link href="/app" className="footer-link">
           Open app
         </Link>
