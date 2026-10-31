@@ -23,8 +23,38 @@ export const BENCHMARK_SYMBOL = "SPY";
 
 const UNIVERSE_MAP = new Map(DEMO_UNIVERSE.map((entry) => [entry.symbol, entry]));
 
+/**
+ * Display names for well-known tickers outside the demo universe (Time Machine scenarios, Legend
+ * portfolios, popular searches). Names only: they don't join the Markets list or change demo pricing.
+ */
+export const KNOWN_NAMES: Readonly<Record<string, string>> = {
+  TSLA: "Tesla, Inc.",
+  GME: "GameStop Corp.",
+  META: "Meta Platforms, Inc.",
+  NFLX: "Netflix, Inc.",
+  AMD: "Advanced Micro Devices, Inc.",
+  GOOG: "Alphabet Inc. (Class C)",
+  QQQ: "Invesco QQQ Trust",
+  "BRK.B": "Berkshire Hathaway Inc. (Class B)",
+  "BRK.A": "Berkshire Hathaway Inc. (Class A)",
+  AXP: "American Express Company",
+  BAC: "Bank of America Corporation",
+  CVX: "Chevron Corporation",
+  JPM: "JPMorgan Chase & Co.",
+  KO: "The Coca-Cola Company",
+  OXY: "Occidental Petroleum Corporation",
+  XOM: "Exxon Mobil Corporation",
+  KHC: "The Kraft Heinz Company",
+  MCO: "Moody's Corporation",
+  CB: "Chubb Limited",
+  DVA: "DaVita Inc.",
+  VRSN: "VeriSign, Inc.",
+  SIRI: "Sirius XM Holdings Inc.",
+};
+
 export function nameForSymbol(symbol: string): string {
-  return UNIVERSE_MAP.get(normalizeSymbol(symbol))?.name ?? normalizeSymbol(symbol);
+  const key = normalizeSymbol(symbol);
+  return UNIVERSE_MAP.get(key)?.name ?? KNOWN_NAMES[key] ?? key;
 }
 
 /** Deterministic 32-bit hash so demo data is stable for a given seed. */

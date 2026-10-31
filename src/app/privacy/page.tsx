@@ -4,7 +4,7 @@ import { LegalPage } from "@/components/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "How Sentia handles your data: your paper portfolio stays in your browser or your account; optional feedback, opt-in anonymous usage counts and the AI coach are described exactly here.",
+  description: "How Sentia (website, Android and iOS apps) handles your data: your paper portfolio stays on your device or in your account; optional feedback, opt-in anonymous usage counts and the AI coach are described exactly here.",
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,8 @@ export default function PrivacyPage() {
       <section className="stack gap-sm">
         <h2>The short version</h2>
         <p className="muted">
-          In demo mode, your portfolio, trades, theses, and profile live only in your own browser. Where accounts are
+          This policy covers the Sentia website and the Sentia apps for Android and iOS. In demo mode, your portfolio,
+          trades, theses, and profile live only on your own device (in your browser, or in the app&apos;s private storage). Where accounts are
           enabled, you can optionally sign in so your paper account is saved to your account and synced across your
           devices. We do not sell your data. Sentia uses no cookies for tracking and no third-party analytics. If you opt
           in, it counts page views and a few actions anonymously (details below); it&apos;s off until you say yes.
@@ -25,7 +26,9 @@ export default function PrivacyPage() {
         <ul className="muted">
           <li>
             Everything you enter (cash balance, holdings, transactions, theses, profile name and preferences) is saved
-            in your browser&apos;s <code>localStorage</code> on the device you are using.
+            on the device you are using: in your browser&apos;s <code>localStorage</code> on the web, or in the
+            app&apos;s private on-device storage in the Android and iOS apps. The website also keeps an offline copy of
+            the app&apos;s own files (never your prices, coach answers or feedback) so it opens without a connection.
           </li>
           <li>
             <strong>Demo mode:</strong> your portfolio is never sent to a server. The only exceptions are the optional
@@ -39,8 +42,9 @@ export default function PrivacyPage() {
             security rules allow only you — signed in with a verified email — to read or change it.
           </li>
           <li>
-            In demo mode, clearing your browser data, or using <strong>Reset workspace</strong> in Settings, permanently
-            deletes it. For accounts, <strong>Reset workspace</strong> replaces the saved copy.
+            <strong>Settings → Delete my data</strong> permanently deletes everything on the device and, if you are
+            signed in, your account and its cloud data too (see <Link href="/delete-account">Delete your data</Link>).
+            Clearing your browser data or uninstalling the app also deletes what is on that device. For accounts, <strong>Reset workspace</strong> replaces the saved copy.
             Use <strong>Export JSON</strong> in Settings to keep your own backup.
           </li>
         </ul>
@@ -126,6 +130,37 @@ export default function PrivacyPage() {
       </section>
 
       <section className="stack gap-sm">
+        <h2>The Android and iOS apps</h2>
+        <ul className="muted">
+          <li>
+            The apps run the same code as the website, packaged with all its files, so they work offline. They ask for
+            no device permissions beyond internet access: no location, contacts, camera, photos, microphone or
+            advertising identifier, and they contain no advertising or third-party tracking SDKs.
+          </li>
+          <li>
+            Accounts are not offered in the apps today, so everything stays on your phone. If they are added, the
+            account section above applies and you will be able to delete your account from Settings.
+          </li>
+          <li>
+            Links to other sites (for example GitHub, or a source in Legends) open in your phone&apos;s browser, under
+            that site&apos;s own privacy policy. A feedback email opens in your own mail app.
+          </li>
+          <li>
+            Apple and Google may collect crash and usage diagnostics about apps you install under their own policies
+            and your device settings; Sentia doesn&apos;t receive personal information from them.
+          </li>
+        </ul>
+      </section>
+
+      <section className="stack gap-sm">
+        <h2>Children</h2>
+        <p className="muted">
+          Sentia is a general-audience education app and is not directed at children under 13. We don&apos;t knowingly
+          collect personal information from children.
+        </p>
+      </section>
+
+      <section className="stack gap-sm">
         <h2>Hosting</h2>
         <p className="muted">
           The public demo is served as static files by GitHub Pages. GitHub may log standard technical information
@@ -138,8 +173,8 @@ export default function PrivacyPage() {
       <section className="stack gap-sm">
         <h2>Changes and contact</h2>
         <p className="muted">
-          If this policy changes, the date above will be updated. Questions can be raised on the project&apos;s GitHub
-          repository. See also the <Link href="/terms">Terms of use</Link>.
+          If this policy changes, the date above will be updated. For questions or data requests, see{" "}
+          <Link href="/support">Help &amp; support</Link>. See also the <Link href="/terms">Terms of use</Link>.
         </p>
       </section>
     </LegalPage>

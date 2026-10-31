@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { demoQuote, demoSnapshot, priceSourceOf, SIM_TICK_MS } from "./market";
+import { DEMO_UNIVERSE, demoQuote, demoSnapshot, nameForSymbol, priceSourceOf, SIM_TICK_MS } from "./market";
 
 test("demoQuote moves over time but keeps a stable previous close", () => {
   const t0 = 1_700_000_000_000;
@@ -38,4 +38,13 @@ test("priceSourceOf reports simulated vs live feeds", () => {
   assert.equal(priceSourceOf({ status: "error", quotes: [] }), "demo");
   assert.equal(priceSourceOf({ status: "open", quotes: [live, demo] }), "mixed");
   assert.equal(priceSourceOf({ status: "closed", quotes: [live, live] }), "live");
+});
+
+test("nameForSymbol names well-known tickers outside the demo universe without adding them to it", () => {
+  assert.equal(nameForSymbol("tsla"), "Tesla, Inc.");
+  assert.equal(nameForSymbol("GME"), "GameStop Corp.");
+  assert.equal(nameForSymbol("BRK.B"), "Berkshire Hathaway Inc. (Class B)");
+  assert.equal(nameForSymbol("AAPL"), "Apple Inc.");
+  assert.equal(nameForSymbol("ZZZQ"), "ZZZQ");
+  assert.ok(!DEMO_UNIVERSE.some((e) => e.symbol === "TSLA"));
 });

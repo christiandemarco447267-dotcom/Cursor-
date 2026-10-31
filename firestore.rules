@@ -69,7 +69,10 @@ service cloud.firestore {
           && request.resource.data.disciplineScore is int
           && request.resource.data.disciplineScore >= 0
           && request.resource.data.disciplineScore <= 100
-          && (request.resource.data.monthlyReturnPct == null || request.resource.data.monthlyReturnPct is number)
+          && (request.resource.data.monthlyReturnPct == null
+              || (request.resource.data.monthlyReturnPct is number
+                  && request.resource.data.monthlyReturnPct >= -100
+                  && request.resource.data.monthlyReturnPct <= 1000))
           && request.resource.data.updatedAt == request.time;
         allow delete: if isVerified() && memberId == request.auth.uid;
       }

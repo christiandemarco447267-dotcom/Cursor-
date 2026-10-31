@@ -2,9 +2,18 @@ import type { Env } from "./env";
 
 export const DEFAULT_ORIGINS = ["https://christiandemarco447267-dotcom.github.io"];
 
-/** Allowed browser origins: the configured list plus any localhost / 127.0.0.1 port (for local testing). */
+/**
+ * Origins the Sentia mobile apps (Capacitor) load from. Always allowed, whatever ALLOWED_ORIGINS says:
+ * iOS serves the app from capacitor://localhost, Android from https://localhost (http://localhost
+ * if the scheme is switched to http). They are not reachable by other websites.
+ * Keep in sync with NATIVE_APP_ORIGINS in src/lib/platform.ts.
+ */
+export const NATIVE_APP_ORIGINS = ["capacitor://localhost", "https://localhost", "http://localhost"];
+
+/** Allowed browser origins: the configured list, the native app origins, plus any localhost / 127.0.0.1 port (for local testing). */
 export function isAllowedOrigin(origin: string | null, env: Env): boolean {
   if (!origin) return false;
+  if (NATIVE_APP_ORIGINS.includes(origin)) return true;
   const configured = (env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((o) => o.trim().replace(/\/+$/, ""))

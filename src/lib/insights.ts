@@ -72,7 +72,7 @@ export function buildInsights(state: AppState, summary: PortfolioSummary): Insig
       title: "Thesis coverage",
       body:
         unlinked.length === 0
-          ? "Every holding is backed by a thesis. That's the habit that separates investing from gambling."
+          ? "Every holding is backed by a thesis. That's the habit that separates investing from guessing."
           : `${unlinked.length} holding${unlinked.length === 1 ? "" : "s"} (${listSymbols(unlinked.map((h) => h.symbol))}) ${
               unlinked.length === 1 ? "lacks" : "lack"
             } a linked thesis. Write one so future-you knows why you bought.`,

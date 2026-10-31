@@ -13,6 +13,7 @@ import { experienceLabel, focusLabel, initialsOf } from "@/lib/profile";
 import { useApp } from "@/lib/store";
 import { Loading, Panel, PageHeader } from "./ui";
 import { AccountSecurity } from "./auth/account-security";
+import { AboutPanel, DeleteDataPanel } from "./delete-data";
 import { REAUTH_NOTICE_KEY } from "./auth/email-link-complete";
 import { useReauth } from "./auth/reauth";
 
@@ -200,7 +201,7 @@ export function SettingsView() {
               is enforced by security rules tied to your verified sign-in.
             </li>
           ) : (
-            <li>Portfolio, ledger, theses, and profile are stored only in your browser (localStorage).</li>
+            <li>Portfolio, ledger, theses, and profile are stored only on this device (browser/app storage).</li>
           )}
           <li>Every write is validated with Zod and stored under a versioned schema with a migration path.</li>
           {IS_STATIC_EXPORT ? (
@@ -254,6 +255,9 @@ export function SettingsView() {
           </button>
         </Panel>
       </div>
+
+      <DeleteDataPanel />
+      <AboutPanel />
 
       <div aria-live="polite">
         {message ? (

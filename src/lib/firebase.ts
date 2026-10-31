@@ -19,10 +19,27 @@ export const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/** Accounts are enabled only when the minimum config is present; otherwise the app is guest-only. */
-export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId,
-);
+/**
+ * Accounts are enabled only when the minimum config is present; otherwise the app is guest-only.
+ *
+ * In the app-store build (NEXT_PUBLIC_APP_TARGET=native) accounts stay OFF unless
+ * NEXT_PUBLIC_NATIVE_FIREBASE=true is also set: the web sign-in flows (email links, reCAPTCHA
+ * for SMS two-step) need native-compatible setup first — authorized domains for
+ * capacitor://localhost and https://localhost, app-scheme email-link handling, and ideally the
+ * @capacitor-firebase/authentication plugin. See STORE_RELEASE.md → "Accounts in the app".
+ * With accounts off the app runs fully on-device, so there is no account to delete.
+ */
+export function accountsEnabledFor(config: FirebaseOptions, env: { target?: string; nativeFirebase?: string }): boolean {
+  const complete = Boolean(config.apiKey && config.authDomain && config.projectId && config.appId);
+  if (!complete) return false;
+  if (env.target === "native") return env.nativeFirebase === "true";
+  return true;
+}
+
+export const isFirebaseConfigured = accountsEnabledFor(firebaseConfig, {
+  target: process.env.NEXT_PUBLIC_APP_TARGET,
+  nativeFirebase: process.env.NEXT_PUBLIC_NATIVE_FIREBASE,
+});
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;

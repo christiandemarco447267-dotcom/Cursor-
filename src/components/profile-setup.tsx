@@ -6,6 +6,7 @@ import { useApp } from "@/lib/store";
 import { AVATAR_COLORS, EXPERIENCE_OPTIONS, FOCUS_OPTIONS, initialsOf } from "@/lib/profile";
 import type { ProfileInput } from "@/lib/storage";
 import type { Profile } from "@/lib/types";
+import { SIM_DISCLAIMER } from "@/lib/site";
 
 export function ProfileSetup() {
   const { profileSetupOpen, closeProfileSetup, state, actions } = useApp();
@@ -88,9 +89,12 @@ function ProfileSetupDialog({
               </span>
               <div className="stack" style={{ gap: 2 }}>
                 <h2 style={{ fontSize: "1.4rem" }}>Create your profile</h2>
-                <span className="small muted">This stays private, in your browser.</span>
+                <span className="small muted">This stays private, on this device.</span>
               </div>
             </div>
+            <p className="sim-disclaimer" role="note">
+              {SIM_DISCLAIMER}
+            </p>
             <div className="field">
               <label htmlFor="setup-name">Your name</label>
               <input

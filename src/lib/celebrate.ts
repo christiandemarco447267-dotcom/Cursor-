@@ -1,5 +1,6 @@
 // Lightweight celebrations: a short canvas confetti burst (no dependencies) and a
 // haptic tap where supported. Confetti is skipped when the OS asks for reduced motion.
+import { isNativeRuntime } from "./platform";
 import type { Settings } from "./types";
 
 export function prefersReducedMotion(): boolean {
@@ -71,6 +72,13 @@ export function confetti(durationMs = 1600, count = 110) {
 }
 
 export function haptic(pattern: number | number[] = [24, 40, 24]) {
+  // In the iOS/Android app use the native Taptic/vibration engine (navigator.vibrate is absent on iOS).
+  if (isNativeRuntime()) {
+    void import("@capacitor/haptics")
+      .then(({ Haptics, NotificationType }) => Haptics.notification({ type: NotificationType.Success }))
+      .catch(() => undefined);
+    return;
+  }
   try {
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") navigator.vibrate(pattern);
   } catch {

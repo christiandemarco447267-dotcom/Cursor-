@@ -1,8 +1,10 @@
 "use client";
 
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { deleteUser } from "firebase/auth";
+import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { cloudStatePath, fromCloudPayload, toCloudPayload } from "./cloud-sync";
-import { firestore } from "./firebase";
+import { cloudDocumentsFor } from "./data-deletion";
+import { firebaseAuth, firestore } from "./firebase";
 import type { AppState } from "./types";
 
 function stateDoc(uid: string) {
@@ -32,4 +34,25 @@ export function watchCloudState(uid: string, onRemote: (state: AppState) => void
     },
     onError,
   );
+}
+
+/**
+ * Permanently delete the signed-in user's cloud data (paper account + league member entries)
+ * and then the Firebase Authentication account itself. Firebase requires a recent sign-in for
+ * deleteUser, so callers wrap this in useReauth().run(...).
+ * League documents the user created (just a name) are left for the remaining members.
+ */
+export async function deleteCloudAccount(leagueCodes: readonly string[]): Promise<void> {
+  const user = firebaseAuth().currentUser;
+  if (!user) throw new Error("You're not signed in.");
+  for (const path of cloudDocumentsFor(user.uid, leagueCodes)) {
+    const [first, ...rest] = path;
+    try {
+      await deleteDoc(doc(firestore(), first, ...rest));
+    } catch (error) {
+      // A league you were removed from (or that no longer exists) can't block account deletion.
+      if (path[0] !== "leagues") throw error;
+    }
+  }
+  await deleteUser(user);
 }
